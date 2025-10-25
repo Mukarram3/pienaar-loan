@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="pienaar-loan" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="pienaar-loan">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/loan.pienaargroupexecutive.com" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
