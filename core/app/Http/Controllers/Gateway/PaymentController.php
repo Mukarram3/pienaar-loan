@@ -11,6 +11,7 @@ use App\Models\GatewayCurrency;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -65,6 +66,7 @@ class PaymentController extends Controller
         $data->failed_url = urlPath('user.deposit.history');
         $data->save();
         session()->put('Track', $data->trx);
+        session()->put('Amount', $data->amount);
         return to_route('user.deposit.confirm');
     }
 
@@ -83,6 +85,32 @@ class PaymentController extends Controller
         return to_route('user.deposit.confirm');
     }
 
+    private function generateSignature(array $data, string $passphrase): string
+    {
+        // Remove the signature if it exists
+        unset($data['signature']);
+
+        // Create parameter string
+        $pfOutput = '';
+        foreach ($data as $key => $val) {
+            if ($val !== '') {
+                $pfOutput .= $key . '=' . urlencode(trim($val)) . '&';
+            }
+        }
+
+        // Remove the last ampersand
+        $pfOutput = substr($pfOutput, 0, -1);
+
+        // Add passphrase if set
+        if ($passphrase !== '') {
+            $pfOutput .= '&passphrase=' . urlencode($passphrase);
+        }
+
+        // Return md5 hash
+        return md5($pfOutput);
+    }
+
+
 
     public function depositConfirm()
     {
@@ -93,21 +121,48 @@ class PaymentController extends Controller
             return to_route('user.deposit.manual.confirm');
         }
 
-
         $dirName = $deposit->gateway->alias;
         $new = __NAMESPACE__ . '\\' . $dirName . '\\ProcessController';
 
         $data = $new::process($deposit);
         $data = json_decode($data);
 
+        if ($data->view == 'user.payment.PayFast'){
+            $passphrase = '113a9f20b88082b3f59e2e449e0225db';
+            $payfastData = [
+                // Merchant details
+                'merchant_id'  => env('merchant_id'),
+                'merchant_key' => env('merchant_key'),
+                'return_url'   => env('return_url'),
+                'cancel_url'   => env('cancel_url'),
+                'notify_url'   => env('notify_url'),
+
+                // Buyer details
+                'name_first' => 'First Name',
+                'name_last' => 'Last Name',
+                'email_address' => 'test@test.com',
+
+                // Transaction details
+                'm_payment_id' => $deposit->trx,
+                'amount'       => number_format(sprintf('%.2f', $deposit->final_amount), 2, '.', ''),
+                'item_name'    => 'Test Item',
+            ];
+
+            $payfastData['signature'] = $this->generateSignature($payfastData, $passphrase);
+
+            $data = (object) [
+                'view'   => $data->view,
+                'url'    => env('PAYFAST_API_URL'),
+                'method' => 'POST',
+                'fields' => $payfastData,
+            ];
+        }
 
         if (isset($data->error)) {
             $notify[] = ['error', $data->message];
             return back()->withNotify($notify);
         }
-        if (isset($data->redirect)) {
-            return redirect($data->redirect_url);
-        }
+        if (isset($data->redirect) && $data->view != 'user.payment.PayFast') { return redirect($data->redirect_url); }
 
         // for Stripe V3
         if(@$data->session){

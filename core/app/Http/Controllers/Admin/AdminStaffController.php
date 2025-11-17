@@ -15,7 +15,7 @@ class AdminStaffController extends Controller
     public function index()
     {
         $pageTitle = 'All Admin Staff';
-        $allStaff  = Admin::selectRaw(
+        $allStaff  = Admin::where('admins.id', '!=', 1)->selectRaw(
             'admins.*,
             CASE WHEN admins.status  = 0 THEN "Banned" ELSE "Active" END AS status_text,
             CASE WHEN admins.role_id = 0 THEN "Super Admin" ELSE roles.name END AS role_name'

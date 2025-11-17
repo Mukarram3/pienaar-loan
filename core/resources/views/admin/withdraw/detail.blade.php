@@ -84,7 +84,7 @@
                                         {{ implode(',',$val->value) }}
                                     @elseif($val->type == 'file')
                                         @if($val->value)
-                                            <a href="{{ route('user.download.attachment',encrypt(getFilePath('verify').'/'.$val->value)) }}" class="me-3"><i class="fa-regular fa-file"></i>  @lang('Attachment') </a>
+                                            <a href="{{ route('user.download.attachment',encrypt(getFilePath('kyc-verify').'/'.$val->value)) }}" class="me-3"><i class="fa-regular fa-file"></i>  @lang('Attachment') </a>
                                         @else
                                             @lang('No File')
                                         @endif

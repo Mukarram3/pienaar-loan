@@ -60,7 +60,7 @@ class ProcessController extends Controller
         );
 
         $dataString = json_encode($query);
-        $ch = curl_init('https://api.ravepay.co/flwv3-pug/getpaidx/api/v2/verify');
+        $ch = curl_init('https://api.ravepay.co/flwv3-pug/getpaidx/api/v2/kyc-verify');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

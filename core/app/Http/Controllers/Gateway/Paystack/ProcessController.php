@@ -44,8 +44,8 @@ class ProcessController extends Controller
         $secret_key = $paystackAcc->secret_key;
 
         $result = array();
-        //The parameter after verify/ is the transaction reference to be verified
-        $url = 'https://api.paystack.co/transaction/verify/' . $track;
+        //The parameter after kyc-verify/ is the transaction reference to be verified
+        $url = 'https://api.paystack.co/transaction/kyc-verify/' . $track;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);

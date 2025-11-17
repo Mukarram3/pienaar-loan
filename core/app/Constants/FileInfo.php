@@ -18,13 +18,13 @@ class FileInfo
 
     public function fileInfo(){
         $data['withdrawVerify'] = [
-            'path'=>'assets/images/verify/withdraw'
+            'path'=>'assets/images/kyc-verify/withdraw'
         ];
         $data['depositVerify'] = [
-            'path'      =>'assets/images/verify/deposit'
+            'path'      =>'assets/images/kyc-verify/deposit'
         ];
-        $data['verify'] = [
-            'path'      =>'assets/verify'
+        $data['kyc-verify'] = [
+            'path'      =>'assets/kyc-verify'
         ];
         $data['default'] = [
             'path'      => 'assets/images/default.png',

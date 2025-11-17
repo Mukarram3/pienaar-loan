@@ -6,9 +6,9 @@
             @elseif($item->type == 'file')
                 @if ($item->value)
                     @if (auth()->guard('admin')->user())
-                        <a class="me-3" href="{{ route('admin.download.attachment', encrypt(getFilePath('verify') . '/' . $item->value)) }}"><i class="fa fa-file"></i> @lang('Attachment') </a>
+                        <a class="me-3" href="{{ route('admin.download.attachment', encrypt(getFilePath('kyc-verify') . '/' . $item->value)) }}"><i class="fa fa-file"></i> @lang('Attachment') </a>
                     @else
-                        <a class="me-3" href="{{ route('user.download.attachment', encrypt(getFilePath('verify') . '/' . $item->value)) }}"><i class="fa fa-file"></i> @lang('Attachment') </a>
+                        <a class="me-3" href="{{ route('user.download.attachment', encrypt(getFilePath('kyc-verify') . '/' . $item->value)) }}"><i class="fa fa-file"></i> @lang('Attachment') </a>
                     @endif
                 @else
                     @lang('No file or file path not found....')

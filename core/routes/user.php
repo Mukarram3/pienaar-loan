@@ -20,8 +20,8 @@ Route::namespace('User\Auth')->name('user.')->group(function () {
         Route::controller('ForgotPasswordController')->prefix('password')->name('password.')->group(function(){
             Route::get('reset', 'showLinkRequestForm')->name('request');
             Route::post('email', 'sendResetCodeEmail')->name('email');
-            Route::get('code-verify', 'codeVerify')->name('code.verify');
-            Route::post('verify-code', 'verifyCode')->name('verify.code');
+            Route::get('code-kyc-verify', 'codeVerify')->name('code.kyc-verify');
+            Route::post('kyc-verify-code', 'verifyCode')->name('kyc-verify.code');
         });
 
         Route::controller('ResetPasswordController')->group(function(){
@@ -45,10 +45,10 @@ Route::middleware('auth')->name('user.')->group(function () {
     //authorization
     Route::middleware('registration.complete')->namespace('User')->controller('AuthorizationController')->group(function(){
         Route::get('authorization', 'authorizeForm')->name('authorization');
-        Route::get('resend-verify/{type}', 'sendVerifyCode')->name('send.verify.code');
-        Route::post('verify-email', 'emailVerification')->name('verify.email');
-        Route::post('verify-mobile', 'mobileVerification')->name('verify.mobile');
-        Route::post('verify-g2fa', 'g2faVerification')->name('2fa.verify');
+        Route::get('resend-kyc-verify/{type}', 'sendVerifyCode')->name('send.kyc-verify.code');
+        Route::post('kyc-verify-email', 'emailVerification')->name('kyc-verify.email');
+        Route::post('kyc-verify-mobile', 'mobileVerification')->name('kyc-verify.mobile');
+        Route::post('kyc-verify-g2fa', 'g2faVerification')->name('2fa.kyc-verify');
     });
 
     Route::middleware(['check.status','registration.complete'])->group(function () {
@@ -85,6 +85,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::post('apply-confirm', 'confirm')->name('apply.confirm');
                 Route::get('list', 'list')->name('list');
                 Route::get('instalment/logs/{loan_number}', 'installments')->name('instalment.logs');
+                Route::post('pay-installment', 'pay_installment')->name('pay_installment');
             });
 
             //Profile setting

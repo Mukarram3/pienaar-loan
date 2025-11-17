@@ -6,7 +6,7 @@
                 <div class="d-flex justify-content-center">
                     <div class="verification-code-wrapper">
                         <div class="verification-area">
-                            <form action="{{ route('user.password.verify.code') }}" method="POST" class="submit-form">
+                            <form action="{{ route('user.password.kyc-verify.code') }}" method="POST" class="submit-form">
                                 @csrf
                                 <p class="verification-text">@lang('A 6 digit verification code sent to your email address') : {{ showEmailAddress($email) }}</p>
                                 <input type="hidden" name="email" value="{{ $email }}">

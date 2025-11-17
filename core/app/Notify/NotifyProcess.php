@@ -154,6 +154,11 @@ class NotifyProcess{
     *
     * @return string
     */
+
+    public function __construct() {
+        $this->shortCodes = [];
+    }
+
 	protected function getMessage(){
         $this->prevConfiguration();
 
@@ -215,6 +220,11 @@ class NotifyProcess{
     * @return string
     */
     protected function replaceTemplateShortCode($content){
+
+        if ($this->shortCodes == null){
+            $this->shortCodes = [];
+        }
+
         foreach ($this->shortCodes as $code => $value) {
             $content = str_replace('{{' . $code . '}}', $value, $content);
         }
@@ -268,6 +278,7 @@ class NotifyProcess{
             }
 		    $notificationLog->notification_type = $type;
 		    $notificationLog->sender = @$config->name ?? 'firebase';
+
 		    $notificationLog->sent_from = $this->sentFrom;
 		    $notificationLog->sent_to = $type == 'push' ? 'Firebase Token' : $this->toAddress;
 		    $notificationLog->subject = $this->subject;

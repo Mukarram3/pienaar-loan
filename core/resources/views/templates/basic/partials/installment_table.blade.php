@@ -7,15 +7,19 @@
                         <thead>
                             <tr>
                                 <th>@lang('S.N.')</th>
+                                <th>@lang('Installment Amount')</th>
                                 <th>@lang('Installment Date')</th>
                                 <th>@lang('Given On')</th>
                                 <th>@lang('Delay')</th>
+                                <th>@lang('Delay Amount')</th>
+                                <th>@lang('Action')</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($installments as $installment)
                                 <tr>
                                     <td>{{ __($loop->index + $installments->firstItem()) }}</td>
+                                    <td>{{ $installment->loan->per_installment }}</td>
                                     <td
                                         class="{{ !$installment->given_at && $installment->installment_date < today() ? 'text--danger' : '' }}">
                                         {{ showDateTime($installment->installment_date, 'd M, Y') }}
@@ -33,6 +37,21 @@
                                             @lang('Day')
                                         @else
                                             ...
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $installment->delay_charge }}
+                                    </td>
+                                    <td>
+{{--                                        @if($installment->installment_date > today() && is_null($installment->given_at))--}}
+                                        @if(is_null($installment->given_at))
+                                            <form action="{{ route('user.loan.pay_installment') }}" method="post">
+                                                @csrf
+                                                <input type="hidden" name="id" value="{{ $installment->id }}">
+                                                <button type="submit" class="btn btn--base btn--smd">Pay Now</button>
+                                            </form>
+                                        @else
+                                            <button class="btn btn--base btn--smd" disabled="">Paid</button>
                                         @endif
                                     </td>
                                 </tr>

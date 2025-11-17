@@ -15,8 +15,8 @@ Route::namespace('Auth')->group(function () {
         Route::controller('ForgotPasswordController')->prefix('password')->name('password.')->group(function(){
             Route::get('reset', 'showLinkRequestForm')->name('reset');
             Route::post('reset', 'sendResetCodeEmail');
-            Route::get('code-verify', 'codeVerify')->name('code.verify');
-            Route::post('verify-code', 'verifyCode')->name('verify.code');
+            Route::get('code-kyc-verify', 'codeVerify')->name('code.kyc-verify');
+            Route::post('kyc-verify-code', 'verifyCode')->name('kyc-verify.code');
         });
 
         Route::controller('ResetPasswordController')->group(function(){
@@ -76,6 +76,7 @@ Route::middleware('admin')->group(function () {
         Route::get('paid/{user_id?}', 'paidLoans')->name('paid');
         Route::get('due', 'dueInstallment')->name('due');
         Route::post('approve/{id}', 'approve')->name('approve');
+        Route::post('assign', 'assign')->name('assign');
         Route::post('reject/{id}', 'reject')->name('reject');
         Route::get('details/{id}', 'details')->name('details');
         Route::get('installments/{id}', 'installments')->name('installments');

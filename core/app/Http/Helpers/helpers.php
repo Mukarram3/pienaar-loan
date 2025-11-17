@@ -323,7 +323,7 @@ function showDateTime($date, $format = 'Y-m-d h:i A')
         return '-';
     }
     $lang = session()->get('lang');
-    Carbon::setlocale($lang);
+    Carbon::setLocale($lang ?: 'en');
     return Carbon::parse($date)->translatedFormat($format);
 }
 

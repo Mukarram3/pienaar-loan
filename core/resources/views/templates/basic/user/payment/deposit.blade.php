@@ -17,7 +17,7 @@
                     <input type="hidden" name="currency">
                     <div class="gateway-card">
                         <div class="row justify-content-center gy-sm-4 gy-3">
-                           
+
                             <div class="col-lg-6">
                                 <div class="payment-system-list is-scrollable gateway-option-list">
                                     @foreach ($gatewayCurrency as $data)
@@ -190,7 +190,7 @@
                 let fixedCharge = 0;
 
                 if (!amount) return;
-                
+
                 let totalPercentCharge = 0;
 
                 if (amount) {

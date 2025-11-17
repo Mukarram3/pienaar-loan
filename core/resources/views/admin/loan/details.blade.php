@@ -65,7 +65,29 @@
                         <h6 class="mt-3"> <i class="fa fa-info-circle text--danger" aria-hidden="true"></i>
                             @lang('Reason of Rejection')</h6>
                         <p class="mt-2">{{ $loan->admin_feedback }}</p>
+
+                    @else
+
+                        <form action="{{ route('admin.loan.assign') }}" method="POST" class="mt-2">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $loan->id }}">
+                            <div class="form-group">
+                                <label>@lang('Assisgn Loan')</label>
+                                <select name="admin_id" class="form-control" required>
+                                    <option value="" disabled selected>@lang('Select One')</option>
+                                    @foreach (\App\Models\Admin::where('status',1)->where('id', '!=', 1)->get() as $admin)
+                                        <option value="{{ $admin->id }}" {{ isset($loan->approved_by) && $loan->approved_by == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')</button>
+                            </div>
+
+                        </form>
+
                     @endif
+
                 </div>
             </div>
         </div>

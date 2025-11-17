@@ -7,7 +7,7 @@
                     <div class="verification-code-wrapper">
                         <div class="verification-area">
                             <h5 class="pb-3 text-center border-bottom">@lang('2FA Verification')</h5>
-                            <form action="{{ route('user.go2fa.verify') }}" method="POST" class="submit-form">
+                            <form action="{{ route('user.go2fa.kyc-verify') }}" method="POST" class="submit-form">
                                 @csrf
 
                                 @include($activeTemplate . 'partials.verification_code')

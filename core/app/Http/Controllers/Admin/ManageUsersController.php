@@ -203,7 +203,7 @@ class ManageUsersController extends Controller
             if ($user->kyc_data) {
                 foreach ($user->kyc_data as $kycData) {
                     if ($kycData->type == 'file') {
-                        fileManager()->removeFile(getFilePath('verify').'/'.$kycData->value);
+                        fileManager()->removeFile(getFilePath('kyc-verify').'/'.$kycData->value);
                     }
                 }
             }

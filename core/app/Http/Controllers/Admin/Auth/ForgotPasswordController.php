@@ -54,7 +54,7 @@ class ForgotPasswordController extends Controller
         $email = $admin->email;
         session()->put('pass_res_mail',$email);
 
-        return to_route('admin.password.code.verify');
+        return to_route('admin.password.code.kyc-verify');
     }
 
     public function codeVerify(){

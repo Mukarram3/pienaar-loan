@@ -38,9 +38,12 @@ class Sms extends NotifyProcess implements Notifiable{
 
 		//get message from parent
 		$message = $this->getMessage();
+
 		if (gs('sn') && $message) {
 			try {
+
 				$gateway = gs('sms_config')->name;
+
                 if($this->mobile){
                     $sendSms = new SmsGateway();
                     $sendSms->to = $this->mobile;
@@ -48,9 +51,12 @@ class Sms extends NotifyProcess implements Notifiable{
                     $sendSms->message = strip_tags($message);
                     $sendSms->config = gs('sms_config');
                     $sendSms->$gateway();
+
                     $this->createLog('sms');
                 }
+
 			} catch (\Exception $e) {
+                dd($e->getMessage());
 				$this->createErrorLog('SMS Error: '.$e->getMessage());
 				session()->flash('sms_error','API Error: '.$e->getMessage());
 			}

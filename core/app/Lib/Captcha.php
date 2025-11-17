@@ -12,9 +12,9 @@ class Captcha{
     | Captcha
     |--------------------------------------------------------------------------
     |
-    | This class is using verify and show captcha. Here is currently available
-    | custom captcha and google recaptcha2. Developer can use verify method
-    | to verify all captcha or can use separately if required
+    | This class is using kyc-verify and show captcha. Here is currently available
+    | custom captcha and google recaptcha2. Developer can use kyc-verify method
+    | to kyc-verify all captcha or can use separately if required
     |
     */
 

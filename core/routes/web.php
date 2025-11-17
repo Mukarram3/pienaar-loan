@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/clear', function () {
+//    \Illuminate\Support\Facades\Artisan::call('app:loan-delay');
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 

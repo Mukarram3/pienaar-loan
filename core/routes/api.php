@@ -34,7 +34,7 @@ Route::namespace('Api')->name('api.')->group(function () {
 
         Route::controller('ForgotPasswordController')->group(function () {
             Route::post('password/email', 'sendResetCodeEmail');
-            Route::post('password/verify-code', 'verifyCode');
+            Route::post('password/kyc-verify-code', 'verifyCode');
             Route::post('password/reset', 'reset');
         });
     });
@@ -46,10 +46,10 @@ Route::namespace('Api')->name('api.')->group(function () {
         //authorization
         Route::middleware('registration.complete')->controller('AuthorizationController')->group(function () {
             Route::get('authorization', 'authorization');
-            Route::get('resend-verify/{type}', 'sendVerifyCode');
-            Route::post('verify-email', 'emailVerification');
-            Route::post('verify-mobile', 'mobileVerification');
-            Route::post('verify-g2fa', 'g2faVerification');
+            Route::get('resend-kyc-verify/{type}', 'sendVerifyCode');
+            Route::post('kyc-verify-email', 'emailVerification');
+            Route::post('kyc-verify-mobile', 'mobileVerification');
+            Route::post('kyc-verify-g2fa', 'g2faVerification');
         });
 
         Route::middleware(['check.status'])->group(function () {
@@ -60,7 +60,7 @@ Route::namespace('Api')->name('api.')->group(function () {
                 Route::controller('UserController')->group(function () {
                     Route::get('dashboard', 'dashboard');
                     Route::get('user-info', 'userInfo');
-                    
+
                     Route::post('profile-setting', 'submitProfile');
                     Route::post('change-password', 'submitPassword');
 

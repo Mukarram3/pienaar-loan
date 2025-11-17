@@ -2,6 +2,8 @@
 
 namespace App\Notify;
 
+use Illuminate\Support\Facades\Log;
+
 class Notify
 {
     /*

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
 use App\Models\Installment;
 use App\Models\Loan;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LoanController extends Controller
 {
@@ -88,6 +90,17 @@ class LoanController extends Controller
         return back()->withNotify($notify);
     }
 
+    public function assign(Request $request){
+        $user = Admin::find($request->admin_id);
+        $loan = Loan::find($request->id);
+        $loan->approved_by = $request->admin_id;
+        $loan->save();
+//        notify($user, "LOAN_APPROVE", $loan->shortCodes());
+
+        $notify[] = ['success', 'Loan Assigned successfully'];
+        return back()->withNotify($notify);
+    }
+
     public function reject(Request $request)
     {
         $request->validate([
@@ -106,7 +119,14 @@ class LoanController extends Controller
 
     protected function loanData($scope = null, $id = 0)
     {
-        $query = Loan::orderBy('id', 'DESC');
+        if (Auth::guard('admin')->user()->id != '1'){
+            $query = Loan::orderBy('id', 'DESC')
+                ->where('approved_by', Auth::guard('admin')->user()->id);
+        }
+        else{
+            $query = Loan::orderBy('id', 'DESC');
+        }
+
         if ($scope) {
             $query->$scope();
         }

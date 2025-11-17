@@ -70,7 +70,7 @@
                                 <p class="fw-bold mb-0">@lang('Email Verification')</p>
                                 <p class="mb-0">
                                     <small>
-                                        @lang('If you enable') <span class="fw-bold">@lang('Email Verification')</span>, @lang('users have to verify their email to access the dashboard. A 6-digit verification code will be sent to their email to be verified.')
+                                        @lang('If you enable') <span class="fw-bold">@lang('Email Verification')</span>, @lang('users have to kyc-verify their email to access the dashboard. A 6-digit verification code will be sent to their email to be verified.')
                                         <br>
                                         <span class="fw-bold"><i>@lang('Note'):</i></span> <i>@lang('Make sure that the') <span class="fw-bold">@lang('Email Notification') </span> @lang('module is enabled')</i>
                                     </small>
@@ -98,7 +98,7 @@
                                 <p class="fw-bold mb-0">@lang('Mobile Verification')</p>
                                 <p class="mb-0">
                                     <small>
-                                        @lang('If you enable') <span class="fw-bold">@lang('Mobile Verification')</span>, @lang('users have to verify their mobile to access the dashboard. A 6-digit verification code will be sent to their mobile to be verified.')
+                                        @lang('If you enable') <span class="fw-bold">@lang('Mobile Verification')</span>, @lang('users have to kyc-verify their mobile to access the dashboard. A 6-digit verification code will be sent to their mobile to be verified.')
                                         <br>
                                         <span class="fw-bold"><i>@lang('Note'):</i></span> <i>@lang('Make sure that the') <span class="fw-bold">@lang('SMS Notification') </span> @lang('module is enabled')</i>
                                     </small>

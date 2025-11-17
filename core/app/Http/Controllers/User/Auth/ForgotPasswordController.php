@@ -55,7 +55,7 @@ class ForgotPasswordController extends Controller
         $email = $user->email;
         session()->put('pass_res_mail',$email);
         $notify[] = ['success', 'Password reset email sent successfully'];
-        return to_route('user.password.code.verify')->withNotify($notify);
+        return to_route('user.password.code.kyc-verify')->withNotify($notify);
     }
 
     public function findFieldType()

@@ -12,9 +12,9 @@
                                     <th>@lang('Loan No.') | @lang('Plan')</th>
                                     <th>@lang('User')</th>
                                     <th>@lang('Amount')</th>
-                                    <th>@lang('Installment Amount')</th>
-                                    <th>@lang('Installment')</th>
-                                    <th>@lang('Created') | </brs> @lang('Next Installment')</th>
+                                    <th>@lang('Instalment Amount')</th>
+                                    <th>@lang('Instalment')</th>
+                                    <th>@lang('Created') | </brs> @lang('Next Instalment')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Action')</th>
                                 </tr>

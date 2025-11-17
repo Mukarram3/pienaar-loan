@@ -21,7 +21,7 @@
     <script>
         (function($){
             "use strict"
-            $('.verify-gcaptcha').on('submit',function(){
+            $('.kyc-verify-gcaptcha').on('submit',function(){
                 var response = grecaptcha.getResponse();
                 if (response.length == 0) {
                     document.getElementById('g-recaptcha-error').innerHTML = '<span class="text--danger">@lang("Captcha field is required.")</span>';

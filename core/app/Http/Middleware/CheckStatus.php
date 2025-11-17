@@ -22,7 +22,7 @@ class CheckStatus
                 return $next($request);
             } else {
                 if ($request->is('api/*')) {
-                    $notify[] = 'You need to verify your account first.';
+                    $notify[] = 'You need to kyc-verify your account first.';
                     return response()->json([
                         'remark'=>'unverified',
                         'status'=>'error',

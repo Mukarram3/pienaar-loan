@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
 use App\Models\AdminNotification;
 use App\Models\Category;
+use App\Models\Installment;
 use App\Models\Loan;
 use App\Models\LoanPlan;
 use App\Models\Transaction;
@@ -116,6 +117,7 @@ class LoanController extends Controller {
 
         session()->forget('loan');
 
+        notify($user, "LOAN_APPLIED", $loan->shortCodes());
         $notify[] = ['success', 'Loan application submitted successfully'];
         return to_route('user.loan.list')->withNotify($notify);
     }
@@ -125,5 +127,26 @@ class LoanController extends Controller {
         $installments = $loan->installments()->paginate(getPaginate());
         $pageTitle    = 'Loan Installments';
         return view('Template::user.loan.installments', compact('pageTitle', 'installments', 'loan'));
+    }
+
+    public function pay_installment(Request $request){
+
+        $installment = Installment::find($request->id);
+        $loan = Loan::find($installment->loan_id);
+
+        if (auth()->user()->balance >= $loan->charge_per_installment + $installment->delay_charge){
+            $installment->given_at = today();
+            $installment->save();
+
+            $user = auth()->user();
+            $user->balance -= ($loan->per_installment + $installment->delay_charge);
+            $user->save();
+            $notify[] = ['success', 'Installment Paid successfully'];
+            return back()->withNotify($notify);
+        }
+        else{
+            $notify[] = ['error', 'Balance is less than Installment Amount'];
+            return back()->withNotify($notify);
+        }
     }
 }

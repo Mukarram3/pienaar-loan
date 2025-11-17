@@ -90,7 +90,7 @@ class UserController extends Controller
             ],
         ]);
     }
-    
+
     public function userDataSubmit(Request $request)
     {
         $user = auth()->user();
@@ -207,7 +207,7 @@ class UserController extends Controller
         $user = auth()->user();
         foreach (@$user->kyc_data ?? [] as $kycData) {
             if ($kycData->type == 'file') {
-                fileManager()->removeFile(getFilePath('verify').'/'.$kycData->value);
+                fileManager()->removeFile(getFilePath('kyc-verify').'/'.$kycData->value);
             }
         }
         $userData = $formProcessor->processFormData($request, $formData);
@@ -577,5 +577,5 @@ class UserController extends Controller
             'message'=>['success'=>$notify],
         ]);
     }
-    
+
 }

@@ -104,8 +104,11 @@ class SmsGateway{
 	}
 
 	public function custom(){
+
 		$credential = $this->config->custom;
+
 		$method = $credential->method;
+
 		$shortCodes = [
 			'{{message}}'=>$this->message,
 			'{{number}}'=>$this->to,
@@ -116,8 +119,10 @@ class SmsGateway{
 			$body[$key] = $bodyData;
 		}
 		$header = array_combine($credential->headers->name,$credential->headers->value);
+
 		if ($method == 'get') {
 			$credential->url = $credential->url.'?'.http_build_query($body);
+
 			CurlRequest::curlContent($credential->url,$header);
 		}else{
 			CurlRequest::curlPostContent($credential->url,$body,$header);

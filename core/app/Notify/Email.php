@@ -3,6 +3,7 @@
 namespace App\Notify;
 use App\Notify\NotifyProcess;
 use App\Notify\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Mailjet\Client;
 use Mailjet\Resources;
 use PHPMailer\PHPMailer\Exception;
@@ -80,32 +81,82 @@ class Email extends NotifyProcess implements Notifiable{
 	    @mail($this->email, $this->subject, $this->finalMessage, $headers);
 	}
 
-	protected function sendSmtpMail(){
-		$mail = new PHPMailer(true);
-		$config = gs('mail_config');
-        //Server settings
-        $mail->isSMTP();
-        $mail->Host       = $config->host;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $config->username;
-        $mail->Password   = $config->password;
-        if ($config->enc == 'ssl') {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        }else{
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+//	protected function sendSmtpMail(){
+//		$mail = new PHPMailer(true);
+//		$config = gs('mail_config');
+//        //Server settings
+//        $mail->isSMTP();
+//        $mail->Host       = $config->host;
+//        $mail->SMTPAuth   = true;
+//        $mail->Username   = $config->username;
+//        $mail->Password   = $config->password;
+//        if ($config->enc == 'ssl') {
+//            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+//        }else{
+//            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+//        }
+//        $mail->Port       = $config->port;
+//        $mail->CharSet = 'UTF-8';
+//        //Recipients
+//        $mail->setFrom($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
+//        $mail->addAddress($this->email, $this->receiverName);
+//        $mail->addReplyTo($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
+//        // Content
+//        $mail->isHTML(true);
+//        $mail->Subject = $this->subject;
+//        $mail->Body    = $this->finalMessage;
+//        $mail->send();
+//	}
+
+    protected function sendSmtpMail()
+    {
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+        try {
+            // Load from .env (via Laravel's config/mail.php)
+            $host       = env('MAIL_HOST');
+            $username   = env('MAIL_USERNAME');
+            $password   = env('MAIL_PASSWORD');
+            $port       = env('MAIL_PORT');
+            $encryption = env('MAIL_ENCRYPTION', 'tls');
+            $fromEmail  = env('MAIL_FROM_ADDRESS');
+            $fromName   = env('MAIL_FROM_NAME', 'Laravel App');
+
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host       = $host;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = $username;
+            $mail->Password   = $password;
+
+            if ($encryption === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($encryption === 'tls') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            }
+
+            $mail->Port       = $port;
+            $mail->CharSet    = 'UTF-8';
+
+            // Recipients
+            $mail->setFrom($fromEmail, $fromName);
+            $mail->addAddress($this->email, $this->receiverName);
+            $mail->addReplyTo($fromEmail, $fromName);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $this->subject;
+            $mail->Body    = $this->finalMessage;
+
+            // Send
+            $mail->send();
+
+            Log::info('SMTP Mail sent successfully to ' . $this->email);
+        } catch (\Exception $e) {
+            Log::error('SMTP Mail send failed: ' . $e->getMessage());
         }
-        $mail->Port       = $config->port;
-        $mail->CharSet = 'UTF-8';
-        //Recipients
-        $mail->setFrom($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
-        $mail->addAddress($this->email, $this->receiverName);
-        $mail->addReplyTo($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = $this->subject;
-        $mail->Body    = $this->finalMessage;
-        $mail->send();
-	}
+    }
+
 
 	protected function sendSendGridMail(){
 		$sendgridMail = new Mail();

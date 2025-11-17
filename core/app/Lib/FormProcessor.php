@@ -120,8 +120,9 @@ class FormProcessor
             $value = $request->$name;
             if ($data->type == 'file') {
                 if ($request->hasFile($name)) {
-                    $directory = date("Y") . "/" . date("m") . "/" . date("d");
-                    $path = getFilePath('verify') . '/' . $directory;
+//                    $directory = date("Y") . "/" . date("m") . "/" . date("d");
+                    $directory = auth()->user()->firstname . ' ' . auth()->user()->lastname;
+                    $path = getFilePath('kyc-verify') . '/' . $directory;
                     $value = $directory . '/' . fileUploader($value, $path);
                 } else {
                     $value = null;

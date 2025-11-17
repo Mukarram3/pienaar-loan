@@ -7,7 +7,7 @@
                     <h2 class="text-white mb-2">@lang('Verify Code')</h2>
                     <p class="text-white mb-2">@lang('Please check your email and enter the verification code you got in your email.')</p>
                 </div>
-                <form action="{{ route('admin.password.verify.code') }}" method="POST" class="login-form w-100">
+                <form action="{{ route('admin.password.kyc-verify.code') }}" method="POST" class="login-form w-100">
                     @csrf
 
                     <div class="code-box-wrapper d-flex w-100">
