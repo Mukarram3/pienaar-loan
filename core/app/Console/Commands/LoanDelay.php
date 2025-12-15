@@ -106,6 +106,8 @@ class LoanDelay extends Command
                 $installment->delay_charge = ($installment->delay_charge ?? 0) + $delayCharge;
                 $installment->save();
 
+                $shortCodes['late_fee'] = $delayCharge;
+                $shortCodes['balance'] = $user->balance;
                 notify($user, "CHARGES_APPLIED_ON_LOAN", $shortCodes);
 
                 Log::info("Delay charge applied", [

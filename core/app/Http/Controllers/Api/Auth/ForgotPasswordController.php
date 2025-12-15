@@ -53,7 +53,8 @@ class ForgotPasswordController extends Controller
             'operating_system' => @$userBrowserInfo['os_platform'],
             'browser' => @$userBrowserInfo['browser'],
             'ip' => @$userIpInfo['ip'],
-            'time' => @$userIpInfo['time']
+            'time' => @$userIpInfo['time'],
+            'email' => $user->email
         ],['email']);
 
         $email = $user->email;

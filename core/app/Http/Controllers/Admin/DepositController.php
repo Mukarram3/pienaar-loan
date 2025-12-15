@@ -7,6 +7,7 @@ use App\Models\Deposit;
 use App\Models\Gateway;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Gateway\PaymentController;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class DepositController extends Controller
@@ -126,6 +127,9 @@ class DepositController extends Controller
         PaymentController::userDataUpdate($deposit,true);
 
         $notify[] = ['success', 'Deposit request approved successfully'];
+
+        $user = User::find($deposit->user_id);
+        notify($user, 'DEPOSIT_APPROVE', []);
 
         return to_route('admin.deposit.pending')->withNotify($notify);
     }

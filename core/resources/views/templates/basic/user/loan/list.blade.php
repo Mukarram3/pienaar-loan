@@ -66,6 +66,14 @@
                                                     <div class="icon icon-success">
                                                         <i class="las la-check-circle"></i>
                                                     </div>
+                                                @elseif($loan->status == Status::LOAN_IN_REVIEW)
+                                                    <div class="icon icon-warning">
+                                                        <i class="las la-sync"></i>
+                                                    </div>
+                                                @elseif($loan->status == Status::LOAN_APPROVED)
+                                                    <div class="icon icon-success">
+                                                        <i class="las la-sync"></i>
+                                                    </div>
                                                 @else
                                                     <div class="icon icon-danger">
                                                         <i class="las la-ban"></i>
@@ -161,6 +169,19 @@
                                                     @endif
                                                 </div>
                                             </li>
+                                            @if($loan->status == Status::LOAN_APPROVED && !$loan->signed_agreement)
+                                                <form action="{{ route('user.loan.submit_agreement') }}" enctype="multipart/form-data" method="post">
+                                                    @csrf
+                                                    <input type="hidden" value="{{ $loan->id }}" name="loan_id">
+                                                    <li>
+                                                        <span class="caption">@lang('Submit Agreement')</span>
+                                                        <div class="value">
+                                                            <input type="file" name="signed_agreement">
+                                                            <button type="submit" class="btn btn-primary"> Submit </button>
+                                                        </div>
+                                                    </li>
+                                                </form>
+                                            @endif
                                             <li>
                                                 <span class="caption">@lang('Action')</span>
                                                 <div class="value">

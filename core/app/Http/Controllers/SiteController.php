@@ -20,6 +20,7 @@ class SiteController extends Controller
 {
     public function index()
     {
+
         $reference = @$_GET['reference'];
         if ($reference) {
             session()->put('reference', $reference);

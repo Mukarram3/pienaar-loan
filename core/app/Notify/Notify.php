@@ -40,6 +40,8 @@ class Notify
     */
 	public $sendVia;
 
+    public $attachments;
+
     /**
     * Instance of user, who will get the notification
     *
@@ -114,7 +116,8 @@ class Notify
 			$notify->createLog = $this->createLog;
 			$notify->userColumn = $this->userColumn;
 			$notify->pushImage = $this->pushImage;
-			$notify->send();
+            $notify->attachments = $this->attachments;
+            $notify->send();
 		}
 	}
 

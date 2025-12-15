@@ -99,21 +99,48 @@
                     <h5 class="card-title border-bottom pb-2">@lang('Loan Form Submitted by User')</h5>
                     <x-view-form-data :data="$loan->application_form" />
 
-                    @if ($loan->status == Status::LOAN_PENDING)
+                    @if( ($loan->status == Status::LOAN_APPROVED || $loan->status == Status::LOAN_RUNNING) && $loan->signed_agreement)
+                        <h5 class="card-title border-bottom pb-2">@lang('Loan Agreement Submitted by User')</h5>
+                        <a href="{{ route('user.loan.view.agreement', $loan->user->id) }}"
+                           class="btn btn-primary"
+                           target="_blank">
+                            View Signed Agreement
+                        </a>
+                    @else
+                        <span class="text-muted">No agreement uploaded</span>
+                    @endif
+
                         <div class="row mt-4">
                             <div class="col-md-12">
-                                <button class="btn btn-outline--success confirmationBtn"
-                                    data-action="{{ route('admin.loan.approve', $loan->id) }}"
-                                    data-question="@lang('Are you sure to approve this loan?')">
-                                    <i class="fas la-check"></i> @lang('Approve')
-                                </button>
-                                <button class="btn btn-outline--danger ms-1 rejectBtn"
-                                    data-action="{{ route('admin.loan.reject', $loan->id) }}">
-                                    <i class="fas fa-ban"></i> @lang('Reject')
-                                </button>
+                                @if ($loan->status == Status::LOAN_PENDING)
+                                        <button class="btn btn-outline--warning confirmationBtn"
+                                                data-action="{{ route('admin.loan.review', $loan->id) }}"
+                                                data-question="@lang('Are you sure to Review this loan?')">
+                                            <i class="fas la-check"></i> @lang('Review')
+                                        </button>
+                                    @endif
+                                    @if($loan->status == Status::LOAN_IN_REVIEW)
+                                        <button class="btn btn-outline--success confirmationBtn"
+                                                data-action="{{ route('admin.loan.approve', $loan->id) }}"
+                                                data-question="@lang('Are you sure to approve this loan?')">
+                                            <i class="fas la-check"></i> @lang('Approve')
+                                        </button>
+                                    @endif
+                                    @if ($loan->status == Status::LOAN_APPROVED)
+                                        <button class="btn btn-outline--warning confirmationBtn"
+                                                data-action="{{ route('admin.loan.release_funds', $loan->id) }}"
+                                                data-question="@lang('Are you sure to Release Funds for this loan?')">
+                                            <i class="fas la-check"></i> @lang('Release Funds')
+                                        </button>
+                                    @endif
+                                @if($loan->status != STATUS::LOAN_RUNNING)
+                                        <button class="btn btn-outline--danger ms-1 rejectBtn"
+                                                data-action="{{ route('admin.loan.reject', $loan->id) }}">
+                                            <i class="fas fa-ban"></i> @lang('Reject')
+                                        </button>
+                                    @endif
                             </div>
                         </div>
-                    @endif
                 </div>
             </div>
         </div>

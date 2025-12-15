@@ -37,6 +37,9 @@ class ProfileController extends Controller
         $user->zip = $request->zip;
 
         $user->save();
+
+        notify($user, 'Profile_Updated', []);
+
         $notify[] = ['success', 'Profile updated successfully'];
         return back()->withNotify($notify);
     }

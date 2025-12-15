@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Gateway\PayFast;
 
 use App\Constants\Status;
+use App\Models\Admin;
 use App\Models\Deposit;
 use App\Http\Controllers\Gateway\PaymentController;
+use App\Models\Gateway;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\File;
@@ -31,6 +34,18 @@ class ProcessController extends Controller
         $send['method'] = 'post';
         $send['url'] = route('ipn.'.$alias);
         return json_encode($send);
+    }
+
+    function pfValidSignature( $pfData, $pfParamString, $pfPassphrase = null ) {
+        // Calculate security signature
+        if($pfPassphrase === null) {
+            $tempParamString = $pfParamString;
+        } else {
+            $tempParamString = $pfParamString.'&passphrase='.urlencode( $pfPassphrase );
+        }
+
+        $signature = md5( $tempParamString );
+        return ( $pfData['signature'] === $signature );
     }
 
     function pfValidPaymentData( $cartTotal, $pfData ) {
@@ -100,100 +115,69 @@ class ProcessController extends Controller
 
     public function ipn(Request $request)
     {
-        header( 'HTTP/1.0 200 OK' );
-        flush();
+        $gateway = Gateway::where('alias', 'PayFast')->first();
+        $parameters = collect(json_decode($gateway->gateway_parameters));
+        $pfParamString = '';
+        $passphrase = $parameters['passphrase']->value;
+        $pfData = $_POST;
+        foreach( $pfData as $key => $val ) {
+            $pfData[$key] = stripslashes( $val );
+        }
 
-        define( 'SANDBOX_MODE', true );
-        Log::info($request->all());
-        Log::info('--- PayFast ITN received ---');
+        foreach( $pfData as $key => $val ) {
+            if( $key !== 'signature' ) {
+                $pfParamString .= $key .'='. urlencode( $val ) .'&';
+            } else {
+                break;
+            }
+        }
 
-        $pfHost = SANDBOX_MODE ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
+        $pfParamString = substr( $pfParamString, 0, -1 );
+
+        $pfHost = $parameters['api_mode']->value == 'live'
+            ? 'www.payfast.co.za'
+            : 'sandbox.payfast.co.za';
         $pfData = $request->all();
 
-//        foreach( $pfData as $key => $val ) {
-//            $pfData[$key] = stripslashes( $val );
-//        }
-//
-//        foreach( $pfData as $key => $val ) {
-//            if( $key !== 'signature' ) {
-//                $pfParamString .= $key .'='. urlencode( $val ) .'&';
-//            } else {
-//                break;
-//            }
-//        }
+        $deposit = Deposit::where('trx', $request->m_payment_id)->orderBy('id', 'DESC')->first();
+        $user = User::find($deposit->user_id);
+        notify($user, 'DEPOSIT_REQUEST', []);
 
-//        $check2 = $this->pfValidIP();
-        $check3 = $this->pfValidPaymentData('124.12', $pfData);
-//        $check4 = $this->pfValidServerConfirmation($pfParamString, $pfHost);
+        $admins = Admin::all();
 
-        if($check3) {
-            Log::info('check 3 passed');
+        foreach ($admins as $admin){
+            notify($admin, 'New_Deposit_Pending_Approval', [
+                'name' => $user->username,
+                'amount' => showAmount($deposit->final_amount,currencyFormat:false)
+            ]);
+        }
+
+
+        $final_amount = number_format(sprintf('%.2f', $deposit->final_amount), 2, '.', '');
+        $check1 = $this->pfValidSignature($pfData, $pfParamString, $passphrase);
+        $check2 = $this->pfValidIP();
+        $check3 = $this->pfValidPaymentData($final_amount, $pfData);
+        $check4 = $this->pfValidServerConfirmation($pfParamString, $pfHost);
+
+        if($check1 && $check2 && $check3 && $check4) {
+            Log::info('All Checks passed');
+
+            if ($deposit->status == Status::PAYMENT_SUCCESS) {
+                $notify[] = ['error', 'Invalid request.'];
+                return redirect($deposit->failed_url)->withNotify($notify);
+            }
+
+            try {
+
+                if ($request->payment_status == 'COMPLETE') {
+                    PaymentController::userDataUpdate($deposit);
+                }
+            }
+            catch (\Exception $e) {
+                Log::info($e->getMessage());
+            }
         } else {
             Log::info('failed');
         }
-
-//        $track = Session::get('Track');
-//        $deposit = Deposit::where('trx', $track)->orderBy('id', 'DESC')->first();
-//        if ($deposit->status == Status::PAYMENT_SUCCESS) {
-//            $notify[] = ['error', 'Invalid request.'];
-//            return redirect($deposit->failed_url)->withNotify($notify);
-//        }
-//        $request->validate([
-//            'cardNumber' => 'required',
-//            'cardExpiry' => 'required',
-//            'cardCVC' => 'required',
-//        ]);
-//
-//        $cc = $request->cardNumber;
-//        $exp = $request->cardExpiry;
-//        $cvc = $request->cardCVC;
-//
-//        $exp = explode("/", $_POST['cardExpiry']);
-//        if (!@$exp[1]) {
-//            $notify[] = ['error', 'Invalid expiry date provided'];
-//            return back()->withNotify($notify);
-//        }
-//        $emo = trim($exp[0]);
-//        $eyr = trim($exp[1]);
-//        $cents = round($deposit->final_amount, 2) * 100;
-//
-//        $stripeAcc = json_decode($deposit->gatewayCurrency()->gateway_parameter);
-//
-//
-//        Stripe::setApiKey($stripeAcc->secret_key);
-//
-//        Stripe::setApiVersion("2020-03-02");
-//
-//        try {
-//            $token = Token::create(array(
-//                    "card" => array(
-//                    "number" => "$cc",
-//                    "exp_month" => $emo,
-//                    "exp_year" => $eyr,
-//                    "cvc" => "$cvc"
-//                )
-//            ));
-//            try {
-//                $charge = Charge::create(array(
-//                    'card' => $token['id'],
-//                    'currency' => $deposit->method_currency,
-//                    'amount' => $cents,
-//                    'description' => 'item',
-//                ));
-//
-//                if ($charge['status'] == 'succeeded') {
-//                    PaymentController::userDataUpdate($deposit);
-//                    $notify[] = ['success', 'Payment captured successfully'];
-//                    return redirect($deposit->success_url)->withNotify($notify);
-//                }
-//            } catch (\Exception $e) {
-//                $notify[] = ['error', $e->getMessage()];
-//            }
-//        } catch (\Exception $e) {
-//
-//            $notify[] = ['error', $e->getMessage()];
-//        }
-//
-//        return back()->withNotify($notify);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Lib\Intended;
+use App\Models\User;
 use App\Models\UserLogin;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
@@ -35,6 +36,12 @@ class LoginController extends Controller
     public function login(Request $request)
     {
 
+//        $testinguser = User::find(2);
+//
+//        notify($testinguser,'Welcome_PienaarBank',[
+//            'name' => $testinguser->username
+//        ]);
+
         $this->validateLogin($request);
 
         if(!verifyCaptcha()){
@@ -52,6 +59,38 @@ class LoginController extends Controller
         }
 
         if ($this->attemptLogin($request)) {
+
+            $this->clearLoginAttempts($request);
+
+            $user = $this->guard()->user();
+            $ip = $request->ip();
+            $agent = osBrowser();
+            $deviceExists = UserLogin::where('user_id', $user->id)
+                ->where('user_ip', $ip)
+                ->where('browser', $agent['browser'])
+                ->where('os', $agent['os_platform'])
+                ->exists();
+
+            if (!$deviceExists) {
+
+                // Store new login info
+                UserLogin::create([
+                    'user_id' => $user->id,
+                    'user_ip' => $ip,
+                    'browser' => $agent['browser'],
+                    'os'      => $agent['os_platform'],
+                ]);
+
+                notify($user, 'New_Login_Detected', [
+                    'name'      => $user->username,
+                    'ip'        => $ip,
+                    'location'  => getIpInfo($ip)->city ?? 'Unknown',
+                    'datetime'  => now()->format('Y-m-d H:i:s'),
+                    'os'        => $agent['os_platform'],
+                    'browser'   => $agent['browser'],
+                ]);
+            }
+
             return $this->sendLoginResponse($request);
         }
 

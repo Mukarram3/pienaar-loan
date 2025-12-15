@@ -150,6 +150,7 @@
       <path value="$PROJECT_DIR$/core/vendor/egulias/email-validator" />
       <path value="$PROJECT_DIR$/core/vendor/symfony/clock" />
       <path value="$PROJECT_DIR$/core/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/core/vendor/tecnickcom/tcpdf" />
     </include_path>
   </component>
   <component name="PhpUnit">

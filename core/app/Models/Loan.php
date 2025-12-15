@@ -51,6 +51,16 @@ class Loan extends Model
         return $query->where('status', Status::LOAN_PENDING);
     }
 
+    public function scopeIn_review($query)
+    {
+        return $query->where('status', Status::LOAN_IN_REVIEW);
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('status', Status::LOAN_APPROVED);
+    }
+
     public function scopeRunning($query)
     {
         return $query->where('status', Status::LOAN_RUNNING);
@@ -66,10 +76,10 @@ class Loan extends Model
         return $query->where('status', Status::LOAN_REJECTED);
     }
 
-    public function scopeApproved($query)
-    {
-        return $query->where('status', '!=', Status::LOAN_REJECTED);
-    }
+//    public function scopeApproved($query)
+//    {
+//        return $query->where('status', '!=', Status::LOAN_REJECTED);
+//    }
 
     public function scopeDue($query)
     {
@@ -89,6 +99,10 @@ class Loan extends Model
                 $badge = createBadge('primary', 'Running');
             } elseif ($this->status == Status::LOAN_PAID) {
                 $badge = createBadge('success', 'Paid');
+            } elseif ($this->status == Status::LOAN_IN_REVIEW) {
+                $badge = createBadge('warning', 'In-Review');
+            } elseif ($this->status == Status::LOAN_APPROVED) {
+                $badge = createBadge('success', 'Approved');
             } else {
                 $badge = createBadge('danger', 'Rejected');
             }
@@ -113,13 +127,13 @@ class Loan extends Model
         return [
             "plan_name"              => $this->plan->name,
             "loan_number"            => $this->loan_number,
-            "amount"                 => $this->amount,
-            "per_installment"        => $this->per_installment,
-            "payable_amount"         => $this->payable_amount,
+            "amount"                 => number_format($this->amount, 2, '.', ''),
+            "per_installment"        => number_format($this->per_installment, 2, '.', ''),
+            "payable_amount"         => number_format($this->payable_amount, 2, '.', ''),
             "installment_interval"   => $this->installment_interval,
-            "delay_value"            => $this->delay_value,
-            "charge_per_installment" => $this->charge_per_installment,
-            "delay_charge"           => $this->delay_charge,
+            "delay_value"            => number_format($this->delay_value, 2, '.', ''),
+            "charge_per_installment" => number_format($this->charge_per_installment, 2, '.', ''),
+            "delay_charge"           => number_format($this->delay_charge, 2, '.', ''),
             "given_installment"      => $this->given_installment,
             "total_installment"      => $this->total_installment,
             "reason_of_rejection"    => $this->admin_feedback,

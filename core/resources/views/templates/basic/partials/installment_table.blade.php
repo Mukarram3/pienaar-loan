@@ -33,8 +33,12 @@
                                     </td>
                                     <td>
                                         @if ($installment->given_at)
-                                            {{ $installment->given_at->diffInDays($installment->installment_date) }}
-                                            @lang('Day')
+                                            @php
+                                                $delay = $installment->given_at->gt($installment->installment_date)
+                                                    ? $installment->given_at->diffInDays($installment->installment_date)
+                                                    : 0;
+                                            @endphp
+                                            {{ $delay }} @lang('Day')
                                         @else
                                             ...
                                         @endif

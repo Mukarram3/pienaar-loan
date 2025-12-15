@@ -100,11 +100,15 @@ class Push extends NotifyProcess implements Notifiable{
     * @return void
     */
 	public function prevConfiguration(){
-		if ($this->user) {
+        if ($this->user && method_exists($this->user, 'deviceTokens')) {
             $this->deviceId = $this->user->deviceTokens()->pluck('token')->toArray();
-			$this->receiverName = $this->user->fullname;
-		}
-		$this->toAddress = $this->deviceId;
+            $this->receiverName = $this->user->fullname;
+        } else {
+            $this->deviceId = [];
+            $this->receiverName = $this->user->fullname ?? 'Admin';
+        }
+
+        $this->toAddress = $this->deviceId;
 	}
 
     private function getTitle(){

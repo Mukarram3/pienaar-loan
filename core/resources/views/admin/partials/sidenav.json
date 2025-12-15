@@ -42,6 +42,26 @@
                 }]
             },
             {
+                "keyword": ["In-Review", "Waiting Loans", "Loans"],
+                "title": "In-Review Loans",
+                "route_name": "admin.loan.in_review",
+                "menu_active": "admin.loan.in-review",
+                "counter": "in_review_LoanCount",
+                "params":[{
+                    "user_id":""
+                }]
+            },
+            {
+                "keyword": ["In-Review", "Approved Loans", "Loans"],
+                "title": "Approved Loans",
+                "route_name": "admin.loan.approved",
+                "menu_active": "admin.loan.approved",
+                "counter": "approved_LoanCount",
+                "params":[{
+                    "user_id":""
+                }]
+            },
+            {
                 "keyword": ["Running", "Continue", "Loans"],
                 "title": "Running Loans",
                 "route_name": "admin.loan.running",

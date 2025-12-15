@@ -66,11 +66,27 @@
                                     <div class="payment-method-body mt-2">
                                         <h4 class="mb-3 payment-method-body-title">@lang('Global Setting for') {{ __($gateway->name) }}</h4>
                                         <div class="row">
+
+                                            {{-- API Mode Dropdown --}}
+                                            <div class="form-group col-xl-6 col-lg-12 col-md-6">
+                                                <label>API Mode</label>
+                                                <select class="form-control" name="global[api_mode]" required>
+                                                    <option value="sandbox" {{ @$parameters['api_mode']->value == 'sandbox' ? 'selected' : '' }}>
+                                                        Sandbox
+                                                    </option>
+                                                    <option value="live" {{ @$parameters['api_mode']->value == 'live' ? 'selected' : '' }}>
+                                                        Live
+                                                    </option>
+                                                </select>
+                                            </div>
+
                                             @foreach ($parameters->where('global', true) as $key => $param)
-                                                <div class="form-group col-xl-6 col-lg-12 col-md-6">
-                                                    <label>{{ __(@$param->title) }}</label>
-                                                    <input type="text" class="form-control" name="global[{{ $key }}]" value="{{ @$param->value }}" required>
-                                                </div>
+                                                @if ($key !== 'api_mode')
+                                                    <div class="form-group col-xl-6 col-lg-12 col-md-6">
+                                                        <label>{{ __(@$param->title) }}</label>
+                                                        <input type="text" class="form-control" name="global[{{ $key }}]" value="{{ @$param->value }}" required>
+                                                    </div>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>

@@ -10,6 +10,7 @@ use App\Models\Loan;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use TCPDF;
 
 class LoanController extends Controller
 {
@@ -31,6 +32,18 @@ class LoanController extends Controller
     {
         $this->pageTitle = 'Pending Loans';
         return $this->loanData('pending', $userId);
+    }
+
+    public function in_review_Loans($userId = 0)
+    {
+        $this->pageTitle = 'In-Review Loans';
+        return $this->loanData('in_review', $userId);
+    }
+
+    public function approved_Loans($userId = 0)
+    {
+        $this->pageTitle = 'Approved Loans';
+        return $this->loanData('approved', $userId);
     }
 
     public function paidLoans($userId = 0)
@@ -58,7 +71,34 @@ class LoanController extends Controller
         return view('admin.loan.details', compact('pageTitle', 'loan'));
     }
 
+    public function review($id)
+    {
+        $loan              = Loan::with('user', 'plan')->findOrFail($id);
+        $loan->status      = Status::LOAN_IN_REVIEW;
+        $loan->save();
+        $user = $loan->user;
+
+        notify($user, "LOAN_IN_REVIEW", $loan->shortCodes(), null, true, null);
+        $notify[] = ['success', 'Loan is now under Review successfully'];
+        return back()->withNotify($notify);
+    }
+
     public function approve($id)
+    {
+        $loan              = Loan::with('user', 'plan')->findOrFail($id);
+        $loan->status      = Status::LOAN_APPROVED;
+        $loan->approved_at = now();
+        $loan->save();
+
+        $user = $loan->user;
+        $pdfPath = $this->generateLoanPdf($user, $loan, $loan->plan);
+
+        notify($user, "LOAN_APPROVE", $loan->shortCodes(), null, true, null, [$pdfPath]);
+        $notify[] = ['success', 'Loan approved successfully'];
+        return back()->withNotify($notify);
+    }
+
+    public function release_funds($id)
     {
         $loan              = Loan::with('user', 'plan')->findOrFail($id);
         $loan->status      = Status::LOAN_RUNNING;
@@ -84,10 +124,103 @@ class LoanController extends Controller
         $shortCodes                          = $loan->shortCodes();
         $shortCodes['next_installment_date'] = now()->addDays((int) $loan->installment_interval);
 
-        notify($user, "LOAN_APPROVE", $loan->shortCodes());
-
-        $notify[] = ['success', 'Loan approved successfully'];
+        notify($user, "FUNDS_RELEASED", $loan->shortCodes(), null, true, null, null);
+        $notify[] = ['success', 'Funds Released successfully'];
         return back()->withNotify($notify);
+    }
+
+    public function generateLoanPdf($user, $loan, $plan)
+    {
+        $pdf = new TCPDF();
+        $pdf->SetCreator('Your App');
+        $pdf->SetAuthor('Your App');
+        $pdf->SetTitle('Loan Pre-Agreement Statement');
+        $pdf->SetFont('dejavusans', '', 10);
+        $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        $pdf->setFontSubsetting(true);
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->AddPage();
+
+        $templatePath = dirname(base_path()) . '/assets/loan/PIENAARBANK-COMMERCIAL-LOAN-AGREEMENT.blade.php';
+        $template = file_get_contents($templatePath);
+
+        $logoPath = dirname(base_path()) . '/assets/images/logo_icon/logo.png';
+        $template = str_replace('{{logo}}', $logoPath, $template);
+
+        // Replace dynamic values
+        $template = str_replace([
+            '{{first_name}}',
+            '{{last_name}}',
+            '{{email}}',
+            '{{mobile}}',
+            '{{address}}',
+            '{{city}}',
+            '{{state}}',
+            '{{zip}}',
+            '{{country}}',
+            '{{plan_name}}',
+            '{{amount}}',
+            '{{total_installment}}',
+            '{{installment_interval}}',
+            '{{per_installment}}',
+            '{{profit_percentage}}',
+            '{{application_fixed_charge}}',
+            '{{application_percent_charge}}',
+            '{{bank_name}}',
+            '{{bank_account}}',
+            '{{branch_code}}',
+            '{{delay}}',
+            '{{loan_number}}',
+            '{{fixed_charge}}',
+            '{{percent_charge}}',
+            '{{site_currency}}'
+        ],
+            [
+                $user->firstname,
+                $user->lastname,
+                $user->email,
+                $user->mobile,
+                $user->address,
+                $user->city,
+                $user->state,
+                $user->zip,
+                $user->country_name,
+                $plan->name,
+                number_format($loan->amount, 2, '.', ''),
+                $loan->total_installment,
+                $plan->installment_interval,
+                number_format($loan->per_installment, 2, '.', ''),
+                $plan->percent_charge,
+                number_format($plan->application_fixed_charge, 2, '.', ''),
+                $plan->application_percent_charge,
+                $user->bank_name,
+                $user->bank_account,
+                $user->branch_code,
+                $loan->delay_value,
+                $loan->loan_number,
+                number_format($plan->fixed_charge, 2, '.', ''),
+                $plan->percent_charge,
+                config('app.currency', 'ZAR')
+            ], $template);
+
+        $pdf->writeHTML($template, true, false, true, false, '');
+
+        // ✅ Save PDF
+        $directory = storage_path('app/loan_pdfs');
+
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $fileName = 'loan_' . $loan->loan_number . '.pdf';
+        $filePath = $directory . '/' . $fileName;
+
+        $pdf->Output($filePath, 'F');
+
+        return $filePath;
     }
 
     public function assign(Request $request){
@@ -95,7 +228,6 @@ class LoanController extends Controller
         $loan = Loan::find($request->id);
         $loan->approved_by = $request->admin_id;
         $loan->save();
-//        notify($user, "LOAN_APPROVE", $loan->shortCodes());
 
         $notify[] = ['success', 'Loan Assigned successfully'];
         return back()->withNotify($notify);

@@ -218,12 +218,13 @@ function getImage($image, $size = null)
 }
 
 
-function notify($user, $templateName, $shortCodes = null, $sendVia = null, $createLog = true,$pushImage = null)
+function notify($user, $templateName, $shortCodes = null, $sendVia = null, $createLog = true,$pushImage = null,  $attachments = [])
 {
     $globalShortCodes = [
         'site_name' => gs('site_name'),
         'site_currency' => gs('cur_text'),
         'currency_symbol' => gs('cur_sym'),
+        'subject' => gs('subject'),
     ];
 
     if (gettype($user) == 'array') {
@@ -239,6 +240,7 @@ function notify($user, $templateName, $shortCodes = null, $sendVia = null, $crea
     $notify->createLog = $createLog;
     $notify->pushImage = $pushImage;
     $notify->userColumn = isset($user->id) ? $user->getForeignKey() : 'user_id';
+    $notify->attachments = $attachments;
     $notify->send();
 }
 

@@ -8,7 +8,6 @@
                         <h5>@lang('Stripe Hosted')</h5>
                     </div>
                     <div class="card-body">
-{{--                        <form role="form" class="disableSubmission payment appPayment" id="payment-form" method="{{ $data->method }}" action="{{ $data->url }}">--}}
                         <form role="form" id="payment-form" method="{{ $data->method }}" action="{{ $data->url }}">
                             @foreach($data->fields as $key => $value)
                                 <input type="hidden" name="{{ $key }}" value="{{ $value }}">
@@ -26,6 +25,6 @@
 @push('script')
 
     <script>
-        // document.getElementById('payment-form').submit();
+        document.getElementById('payment-form').submit();
     </script>
 @endpush

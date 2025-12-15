@@ -19,6 +19,7 @@ class Email extends NotifyProcess implements Notifiable{
     * @var string
     */
 	public $email;
+    public $attachments = [];
 
     /**
     * Assign value to properties
@@ -113,14 +114,16 @@ class Email extends NotifyProcess implements Notifiable{
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
         try {
-            // Load from .env (via Laravel's config/mail.php)
-            $host       = env('MAIL_HOST');
-            $username   = env('MAIL_USERNAME');
-            $password   = env('MAIL_PASSWORD');
-            $port       = env('MAIL_PORT');
-            $encryption = env('MAIL_ENCRYPTION', 'tls');
-            $fromEmail  = env('MAIL_FROM_ADDRESS');
-            $fromName   = env('MAIL_FROM_NAME', 'Laravel App');
+            // Load dynamic configuration
+            $config = gs('mail_config');
+
+            $host       = $config->host;
+            $username   = $config->username;
+            $password   = $config->password;
+            $port       = $config->port;
+            $encryption = $config->enc; // ssl | tls
+            $fromEmail  = $this->getEmailFrom()['email'];
+            $fromName   = $this->getEmailFrom()['name'];
 
             // Server settings
             $mail->isSMTP();
@@ -129,10 +132,19 @@ class Email extends NotifyProcess implements Notifiable{
             $mail->Username   = $username;
             $mail->Password   = $password;
 
+            // Encryption logic
             if ($encryption === 'ssl') {
                 $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-            } elseif ($encryption === 'tls') {
+            } else {
                 $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            }
+
+            if (!empty($this->attachments) && is_array($this->attachments)) {
+                foreach ($this->attachments as $file) {
+                    if (file_exists($file)) {
+                        $mail->addAttachment($file);
+                    }
+                }
             }
 
             $mail->Port       = $port;
@@ -148,14 +160,16 @@ class Email extends NotifyProcess implements Notifiable{
             $mail->Subject = $this->subject;
             $mail->Body    = $this->finalMessage;
 
-            // Send
+            // Send email
             $mail->send();
 
             Log::info('SMTP Mail sent successfully to ' . $this->email);
+
         } catch (\Exception $e) {
             Log::error('SMTP Mail send failed: ' . $e->getMessage());
         }
     }
+
 
 
 	protected function sendSendGridMail(){

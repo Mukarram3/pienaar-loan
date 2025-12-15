@@ -119,6 +119,9 @@ trait SupportTicketManager
 
         if($this->apiRequest){
             $notify[] = 'Ticket opened successfully';
+            notify($user, 'Ticket_Submitted', [
+                'ticket_id' => $ticket->ticket,
+            ]);
             return response()->json([
                 'remark'=>'ticket_open',
                 'status'=>'success',
@@ -128,6 +131,10 @@ trait SupportTicketManager
                 ]
             ]);
         }
+
+        notify($user, 'Ticket_Submitted', [
+            'ticket_id' => $ticket->ticket,
+        ]);
 
         $notify[] = ['success', 'Ticket opened successfully!'];
 
@@ -288,12 +295,12 @@ trait SupportTicketManager
                 $sendVia = null;
             }
 
-            notify($user, 'ADMIN_SUPPORT_REPLY', [
-                'ticket_id' => $ticket->ticket,
-                'ticket_subject' => $ticket->subject,
-                'reply' => $request->message,
-                'link' => route('ticket.view', $ticket->ticket),
-            ], $sendVia, $createLog);
+//            notify($user, 'ADMIN_SUPPORT_REPLY', [
+//                'ticket_id' => $ticket->ticket,
+//                'ticket_subject' => $ticket->subject,
+//                'reply' => $request->message,
+//                'link' => route('ticket.view', $ticket->ticket),
+//            ], $sendVia, $createLog);
         }
 
         if($this->apiRequest){
@@ -308,6 +315,13 @@ trait SupportTicketManager
                 ]
             ]);
         }
+
+        notify($user, 'Ticket_Answered', [
+            'ticket_id' => $ticket->ticket,
+            'ticket_subject' => $ticket->subject,
+            'reply' => $request->message,
+            'link' => route('ticket.view', $ticket->ticket),
+        ], $sendVia, $createLog);
 
         $notify[] = ['success', 'Support ticket replied successfully!'];
 
@@ -413,6 +427,10 @@ trait SupportTicketManager
                 'message'=>['success'=>$notify]
             ]);
         }
+
+        notify($user, 'Support_Ticket_Closed', [
+            'ticket_id' => $ticket->ticket,
+        ]);
 
         $notify[] = ['success', 'Support ticket closed successfully!'];
         return back()->withNotify($notify);

@@ -72,10 +72,14 @@ Route::middleware('admin')->group(function () {
         Route::get('all', 'index')->name('index');
         Route::get('running/{user_id?}', 'runningLoans')->name('running');
         Route::get('pending/{user_id?}', 'pendingLoans')->name('pending');
+        Route::get('in-review/{user_id?}', 'in_review_Loans')->name('in_review');
+        Route::get('approved/{user_id?}', 'approved_Loans')->name('approved');
         Route::get('rejected/{user_id?}', 'rejectedLoans')->name('rejected');
         Route::get('paid/{user_id?}', 'paidLoans')->name('paid');
         Route::get('due', 'dueInstallment')->name('due');
+        Route::post('review/{id}', 'review')->name('review');
         Route::post('approve/{id}', 'approve')->name('approve');
+        Route::post('release_funds/{id}', 'release_funds')->name('release_funds');
         Route::post('assign', 'assign')->name('assign');
         Route::post('reject/{id}', 'reject')->name('reject');
         Route::get('details/{id}', 'details')->name('details');

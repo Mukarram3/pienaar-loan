@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
+use App\Models\Admin;
 use App\Models\AdminNotification;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
@@ -139,6 +140,15 @@ class WithdrawController extends Controller
             'trx' => $withdraw->trx,
             'post_balance' => showAmount($user->balance,currencyFormat:false),
         ]);
+
+        $admins = Admin::all();
+
+        foreach ($admins as $admin){
+            notify($admin, 'New_Withdrawal_Request', [
+                'name' => $user->username,
+                'amount' => showAmount($withdraw->amount,currencyFormat:false)
+            ]);
+        }
 
         $notify[] = ['success', 'Withdraw request sent successfully'];
         return to_route('user.withdraw.history')->withNotify($notify);

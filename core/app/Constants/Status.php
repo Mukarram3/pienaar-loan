@@ -44,6 +44,8 @@ class Status{
     const LOAN_RUNNING  = 1;
     const LOAN_PAID     = 2;
     const LOAN_REJECTED = 3;
+    const LOAN_IN_REVIEW = 4;
+    const LOAN_APPROVED = 5;
 
     const DEPOSIT_SUCCESS = 1;
     const DEPOSIT_PENDING = 2;

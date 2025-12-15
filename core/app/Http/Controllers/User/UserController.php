@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Models\Admin;
 use App\Models\Form;
 use App\Models\Loan;
 use App\Models\User;
@@ -14,13 +15,17 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Lib\GoogleAuthenticator;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use TCPDF;
 
 class UserController extends Controller
 {
+
     public function home()
     {
+
         $data['pageTitle']         = 'Dashboard';
         $user                      = auth()->user();
         $data['user']              = $user;
@@ -162,6 +167,8 @@ class UserController extends Controller
         $user->kv = Status::KYC_PENDING;
         $user->save();
 
+        notify($user, 'KYC_Submitted', []);
+
         $notify[] = ['success','KYC data submitted successfully'];
         return to_route('user.home')->withNotify($notify);
     }
@@ -218,6 +225,29 @@ class UserController extends Controller
 
         $user->profile_complete = Status::YES;
         $user->save();
+
+        notify($user,'Welcome_PienaarBank',[
+            'name' => $user->username
+        ]);
+
+        $admins = Admin::all();
+        $userIpInfo = getIpInfo();
+        foreach ($admins as $admin){
+            notify($admin,'New_User_Registered',[
+                'name' => $user->username,
+                'email' => $user->email,
+                'first_name' => $user->firstname,
+                'last_name' => $user->lastname,
+                'mobile' => '+'.$user->dial_code.$user->mobile,
+                'address' => $user->address,
+                'city' => $user->city,
+                'state' => $user->state,
+                'zip' => $user->zip,
+                'country' => $user->country_name,
+                'register_ip' => @$userIpInfo['ip'],
+                'register_time' => $user->created_at,
+            ]);
+        }
 
         return to_route('user.home');
     }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
 use App\Models\AdminNotification;
 use App\Models\Deposit;
+use App\Models\Gateway;
 use App\Models\GatewayCurrency;
 use App\Models\Transaction;
 use App\Models\User;
@@ -67,6 +68,7 @@ class PaymentController extends Controller
         $data->save();
         session()->put('Track', $data->trx);
         session()->put('Amount', $data->amount);
+
         return to_route('user.deposit.confirm');
     }
 
@@ -114,6 +116,7 @@ class PaymentController extends Controller
 
     public function depositConfirm()
     {
+
         $track = session()->get('Track');
         $deposit = Deposit::where('trx', $track)->where('status',Status::PAYMENT_INITIATE)->orderBy('id', 'DESC')->with('gateway')->firstOrFail();
 
@@ -128,31 +131,31 @@ class PaymentController extends Controller
         $data = json_decode($data);
 
         if ($data->view == 'user.payment.PayFast'){
-            $passphrase = '113a9f20b88082b3f59e2e449e0225db';
+            $gateway = Gateway::where('alias', 'PayFast')->first();
+            $parameters = collect(json_decode($gateway->gateway_parameters));
             $payfastData = [
-                // Merchant details
-                'merchant_id'  => env('merchant_id'),
-                'merchant_key' => env('merchant_key'),
-                'return_url'   => env('return_url'),
-                'cancel_url'   => env('cancel_url'),
-                'notify_url'   => env('notify_url'),
-
-                // Buyer details
+                'merchant_id'  => $parameters['merchant_id']->value,
+                'merchant_key' => $parameters['merchant_key']->value,
+                'return_url'   => url('/') . $deposit->success_url,
+                'cancel_url'   => url('/') . $deposit->failed_url,
+                'notify_url'   => url('/ipn/Payfast'),
                 'name_first' => 'First Name',
                 'name_last' => 'Last Name',
                 'email_address' => 'test@test.com',
-
-                // Transaction details
                 'm_payment_id' => $deposit->trx,
                 'amount'       => number_format(sprintf('%.2f', $deposit->final_amount), 2, '.', ''),
                 'item_name'    => 'Test Item',
             ];
 
-            $payfastData['signature'] = $this->generateSignature($payfastData, $passphrase);
+            $payfastData['signature'] = $this->generateSignature($payfastData, $parameters['passphrase']->value);
+
+            $payfast_url = $parameters['api_mode']->value == 'live'
+                ? 'https://www.payfast.co.za'
+                : 'https://sandbox.payfast.co.za';
 
             $data = (object) [
                 'view'   => $data->view,
-                'url'    => env('PAYFAST_API_URL'),
+                'url'    => $payfast_url . '/eng/process',
                 'method' => 'POST',
                 'fields' => $payfastData,
             ];

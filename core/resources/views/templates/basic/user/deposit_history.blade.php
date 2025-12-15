@@ -40,7 +40,6 @@
                             </div>
                             <div class="col-lg-4 col-sm-3 col-4 order-sm-3 order-2 text-end amount-wrapper">
                                 <p><b>{{ showAmount($deposit->amount) }}</b></p>
-
                             </div>
                         </button>
                     </h2>
@@ -57,7 +56,7 @@
                                 </li>
                                 <li>
                                     <span class="caption">@lang('Conversion')</span>
-                                    <span class="value">{{ showAmount($deposit->amount + $deposit->charge) }} x {{ showAmount($deposit->rate, currencyFormat:false) }} {{ __($deposit->method_currency) }} = {{ showAmount($deposit->final_amo, currencyFormat:false) }} {{ __($deposit->method_currency) }}</span>
+                                    <span class="value">{{ showAmount($deposit->amount + $deposit->charge) }} x {{ showAmount($deposit->rate, currencyFormat:false) }} {{ __($deposit->method_currency) }} = {{ showAmount($deposit->final_amount, currencyFormat:false) }} {{ __($deposit->method_currency) }}</span>
                                 </li>
                                 <li>
                                     @php
