@@ -29,8 +29,8 @@ class SocialLogin
     {
         if ($this->provider == 'linkedin'){
             $config = [
-                'client_id'     => '77b3a1cgklgxfu',
-                'client_secret' => 'WPL_AP1.04z9GwcPeDHx8i6F.yhiUjA==',
+                'client_id'     => '86to9sop9cflo9',
+                'client_secret' => 'WPL_AP1.7HScKVc6kJZnba6v.Ib8KyQ==',
                 'redirect'      => route('user.social.login.callback', ['provider' => 'linkedin']),
             ];
 

@@ -26,8 +26,8 @@ class SocialiteController extends Controller
             try {
 
                 $config = [
-                    'client_id'     => '77z6mnd3freraf',
-                    'client_secret' => 'WPL_AP1.3Gbf4uJMjEhZvEFO.tRoG3g==',
+                    'client_id'     => '86to9sop9cflo9',
+                    'client_secret' => 'WPL_AP1.7HScKVc6kJZnba6v.Ib8KyQ==',
                     'redirect'      => route('user.social.login.callback', ['provider' => 'linkedin']),
                 ];
 
