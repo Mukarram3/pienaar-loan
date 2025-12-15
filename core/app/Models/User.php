@@ -12,6 +12,42 @@ class User extends Authenticatable
 {
     use HasApiTokens, UserNotify;
 
+    protected $fillable = [
+        'firstname',
+        'lastname',
+        'username',
+        'image',
+        'email',
+        'dial_code',
+        'country_code',
+        'mobile',
+        'ref_by',
+        'balance',
+        'password',
+        'country_name',
+        'city',
+        'state',
+        'zip',
+        'address',
+        'status',
+        'kyc_data',
+        'kyc_rejection_reason',
+        'kv',
+        'ev',
+        'sv',
+        'profile_complete',
+        'ver_code',
+        'ver_code_send_at',
+        'ts',
+        'tv',
+        'tsc',
+        'ban_reason',
+        'remember_token',
+        'provider',
+        'provider_id',
+        'login_by',
+    ];
+
     /**
      * The attributes that should be hidden for arrays.
      *
