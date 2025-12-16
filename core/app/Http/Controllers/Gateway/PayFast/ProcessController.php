@@ -147,12 +147,12 @@ class ProcessController extends Controller
 
         $admins = Admin::all();
 
-        foreach ($admins as $admin){
-            notify($admin, 'New_Deposit_Pending_Approval', [
-                'name' => $user->username,
-                'amount' => showAmount($deposit->final_amount,currencyFormat:false)
-            ]);
-        }
+//        foreach ($admins as $admin){
+//            notify($admin, 'New_Deposit_Pending_Approval', [
+//                'name' => $user->username,
+//                'amount' => showAmount($deposit->final_amount,currencyFormat:false)
+//            ]);
+//        }
 
 
         $final_amount = number_format(sprintf('%.2f', $deposit->final_amount), 2, '.', '');
