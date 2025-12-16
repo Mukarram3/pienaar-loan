@@ -138,7 +138,7 @@ class PaymentController extends Controller
                 'merchant_key' => $parameters['merchant_key']->value,
                 'return_url'   => url('/') . $deposit->success_url,
                 'cancel_url'   => url('/') . $deposit->failed_url,
-                'notify_url'   => url('/ipn/Payfast'),
+                'notify_url'   => url('/ipn/payfast'),
                 'name_first' => 'First Name',
                 'name_last' => 'Last Name',
                 'email_address' => 'test@test.com',

@@ -9,6 +9,13 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="30fc3dc9-6e3f-4776-82b4-60ba1a2a2f58" name="pienaargroupexecutive" url="http://82.29.186.244">
+        <fileTransfer host="82.29.186.244" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

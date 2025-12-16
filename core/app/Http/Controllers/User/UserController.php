@@ -226,10 +226,6 @@ class UserController extends Controller
         $user->profile_complete = Status::YES;
         $user->save();
 
-        notify($user,'Welcome_PienaarBank',[
-            'name' => $user->username
-        ]);
-
         $admins = Admin::all();
         $userIpInfo = getIpInfo();
         foreach ($admins as $admin){

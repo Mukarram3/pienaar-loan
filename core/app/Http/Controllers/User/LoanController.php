@@ -57,21 +57,6 @@ class LoanController extends Controller {
         return back()->withNotify($notify);
     }
 
-    public function viewAgreement($id)
-    {
-        $user = User::findOrFail($id);
-
-        if (!$user->signed_agreement || !Storage::exists($user->signed_agreement)) {
-            abort(404, 'Agreement not found.');
-        }
-
-        return response()->file(
-            storage_path('app/' . $user->signed_agreement),
-            ['Content-Type' => 'application/pdf']
-        );
-    }
-
-
     public function plans() {
         $pageTitle = 'Loan Plans';
         $categories = Category::where('Status', Status::ENABLE)->with('plans')->whereHas('plans', function ($query) {
@@ -188,6 +173,7 @@ class LoanController extends Controller {
         $shortcodes['first_name'] = $user->firstname;
         $shortcodes['last_name'] = $user->lastname;
         $shortcodes['mobile'] = $user->mobile;
+        $shortcodes['email'] = $user->email;
 
         $pdfPath = $this->generateLoanPdf($user, $loan, $plan);
 
@@ -300,7 +286,7 @@ class LoanController extends Controller {
         $installment = Installment::find($request->id);
         $loan = Loan::find($installment->loan_id);
 
-        $total_installments = Installment::where('loan_id', $loan->id);
+        $total_installments = Installment::where('loan_id', $loan->id)->count();
         $paid_installments = Installment::where('loan_id', $loan->id)
             ->whereNotNull('given_at')
             ->count();
@@ -310,16 +296,17 @@ class LoanController extends Controller {
             $installment->given_at = today();
             $installment->save();
 
+            $user = auth()->user();
+            $user->balance -= ($loan->per_installment + $installment->delay_charge);
+            $user->save();
+
             $shortCodes = $loan->shortCodes();
             $shortCodes['due_date'] = showDateTime($installment->installment_date, 'd M Y');
             $shortCodes['amount'] = showAmount($loan->per_installment + $installment->delay_charge,currencyFormat:false);
             $shortCodes['balance'] = showAmount(auth()->user()->balance,currencyFormat:false);
             $shortCodes['current_installment'] = $current_installment_number;
-            $shortCodes['total_installment'] = count($total_installments);
+            $shortCodes['total_installment'] = $total_installments;
 
-            $user = auth()->user();
-            $user->balance -= ($loan->per_installment + $installment->delay_charge);
-            $user->save();
             notify($user, 'Loan_Repayment_Received', $shortCodes);
 
             $allInstallments      = Installment::where('loan_id', $installment->loan_id)->count();

@@ -141,7 +141,9 @@ class ProcessController extends Controller
 
         $deposit = Deposit::where('trx', $request->m_payment_id)->orderBy('id', 'DESC')->first();
         $user = User::find($deposit->user_id);
-        notify($user, 'DEPOSIT_REQUEST', []);
+        notify($user, 'DEPOSIT_REQUEST', [
+            'amount' => $deposit->amount
+        ]);
 
         $admins = Admin::all();
 

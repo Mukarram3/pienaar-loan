@@ -10,6 +10,7 @@ use App\Models\Loan;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use TCPDF;
 
 class LoanController extends Controller
@@ -221,6 +222,20 @@ class LoanController extends Controller
         $pdf->Output($filePath, 'F');
 
         return $filePath;
+    }
+
+    public function viewAgreement($id)
+    {
+        $loan = Loan::findOrFail($id);
+
+        if (!$loan->signed_agreement || !Storage::exists($loan->signed_agreement)) {
+            abort(404, 'Agreement not found.');
+        }
+
+        return response()->file(
+            storage_path('app/' . $loan->signed_agreement),
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     public function assign(Request $request){

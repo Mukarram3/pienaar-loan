@@ -84,6 +84,7 @@ Route::middleware('admin')->group(function () {
         Route::post('reject/{id}', 'reject')->name('reject');
         Route::get('details/{id}', 'details')->name('details');
         Route::get('installments/{id}', 'installments')->name('installments');
+        Route::get('/agreement/{id}','viewAgreement')->name('view.agreement');
     });
 
     //============Staff================//

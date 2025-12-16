@@ -101,6 +101,11 @@ class AuthorizationController extends Controller
             $user->save();
 
             $redirection = Intended::getRedirection();
+
+            notify($user,'Welcome_PienaarBank',[
+                'name' => $user->username
+            ]);
+
             return $redirection ? $redirection : to_route('user.home');
         }
         throw ValidationException::withMessages(['code' => 'Verification code didn\'t match!']);
@@ -120,6 +125,7 @@ class AuthorizationController extends Controller
             $user->ver_code_send_at = null;
             $user->save();
             $redirection = Intended::getRedirection();
+
             return $redirection ? $redirection : to_route('user.home');
         }
         throw ValidationException::withMessages(['code' => 'Verification code didn\'t match!']);

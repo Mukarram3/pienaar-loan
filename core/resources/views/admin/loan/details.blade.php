@@ -101,7 +101,7 @@
 
                     @if( ($loan->status == Status::LOAN_APPROVED || $loan->status == Status::LOAN_RUNNING) && $loan->signed_agreement)
                         <h5 class="card-title border-bottom pb-2">@lang('Loan Agreement Submitted by User')</h5>
-                        <a href="{{ route('user.loan.view.agreement', $loan->user->id) }}"
+                        <a href="{{ route('admin.loan.view.agreement', $loan->id) }}"
                            class="btn btn-primary"
                            target="_blank">
                             View Signed Agreement

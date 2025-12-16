@@ -86,7 +86,6 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('list', 'list')->name('list');
                 Route::get('instalment/logs/{loan_number}', 'installments')->name('instalment.logs');
                 Route::post('submit_agreement', 'submit_agreement')->name('submit_agreement');
-                Route::get('/agreement/{id}','viewAgreement')->name('view.agreement');
                 Route::post('pay-installment', 'pay_installment')->name('pay_installment');
             });
 
