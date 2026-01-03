@@ -221,7 +221,7 @@ class LoanController extends Controller {
             '{{per_installment}}',
             '{{profit_percentage}}',
             '{{application_fixed_charge}}',
-            '{{application_percent_charge}}',
+//            '{{application_percent_charge}}',
             '{{bank_name}}',
             '{{bank_account}}',
             '{{branch_code}}',
@@ -245,15 +245,15 @@ class LoanController extends Controller {
             $loan->total_installment,
             $plan->installment_interval,
                 number_format($loan->per_installment,2, '.', ''),
-            $plan->percent_charge,
+            $plan->per_installment,
                 number_format($plan->application_fixed_charge,2, '.', ''),
-            $plan->application_percent_charge,
+//            $plan->application_percent_charge,
             $user->bank_name,
             $user->bank_account,
             $user->branch_code,
             $loan->delay_value,
                 number_format($plan->fixed_charge,2, '.', ''),
-            $plan->percent_charge,
+            $plan->per_installment,
             config('app.currency', 'ZAR')
         ], $template);
 

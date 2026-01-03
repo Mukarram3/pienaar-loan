@@ -152,7 +152,7 @@
 <div class="info-line"><span class="label">Instalment Amount:</span> {{per_installment}}</div>
 <div class="info-line"><span class="label">Profit Percentage:</span> {{profit_percentage}}%</div>
 <div class="info-line"><span class="label">Application Fixed Charge:</span> {{application_fixed_charge}}</div>
-<div class="info-line"><span class="label">Application % Charge:</span> {{application_percent_charge}}%</div>
+{{--<div class="info-line"><span class="label">Application % Charge:</span> {{application_percent_charge}}%</div>--}}
 
 <p>A full repayment schedule is available in the Borrower's online portal.</p>
 
