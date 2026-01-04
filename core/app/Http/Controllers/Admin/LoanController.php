@@ -205,8 +205,8 @@ class LoanController extends Controller
                 number_format($plan->fixed_charge, 2, '.', ''),
                 $plan->percent_charge,
                 config('app.currency', 'ZAR'),
-                asset('assets/images/company-signature-transparent.png'),
-                asset('assets/images/company-seal-transparent.png')
+                asset('assets/images/Sayed-Abedin-Signature.png'),
+                asset('assets/images/Pienaar-Group-Gold-Foil-Seal-Jagged-Edge.png')
             ], $template);
 
         $pdf->writeHTML($template, true, false, true, false, '');
