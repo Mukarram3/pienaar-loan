@@ -169,7 +169,6 @@ class LoanController extends Controller
             '{{per_installment}}',
             '{{profit_percentage}}',
             '{{application_fixed_charge}}',
-//            '{{application_percent_charge}}',
             '{{bank_name}}',
             '{{bank_account}}',
             '{{branch_code}}',
@@ -177,7 +176,9 @@ class LoanController extends Controller
             '{{loan_number}}',
             '{{fixed_charge}}',
             '{{percent_charge}}',
-            '{{site_currency}}'
+            '{{site_currency}}',
+            '{{lender_signature}}',
+            '{{company_seal}}'
         ],
             [
                 $user->firstname,
@@ -196,7 +197,6 @@ class LoanController extends Controller
                 number_format($loan->per_installment, 2, '.', ''),
                 $plan->per_installment,
                 number_format($plan->application_fixed_charge, 2, '.', ''),
-//                $plan->application_percent_charge,
                 $user->bank_name,
                 $user->bank_account,
                 $user->branch_code,
@@ -204,7 +204,9 @@ class LoanController extends Controller
                 $loan->loan_number,
                 number_format($plan->fixed_charge, 2, '.', ''),
                 $plan->percent_charge,
-                config('app.currency', 'ZAR')
+                config('app.currency', 'ZAR'),
+                asset('assets/images/company-signature-transparent.png'),
+                asset('assets/images/company-seal-transparent.png')
             ], $template);
 
         $pdf->writeHTML($template, true, false, true, false, '');
