@@ -3,8 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/clear', function () {
+    return view('templates.basic.agreement-design');
 //    \Illuminate\Support\Facades\Artisan::call('app:loan-delay');
-    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+//    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 
 // Cron Route
