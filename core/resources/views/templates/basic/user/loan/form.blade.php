@@ -15,7 +15,7 @@
                                     $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
                                     @endphp
                                     <h5 class="text-center">
-                                        @lang('You are aplying to take loan')
+                                        @lang('You are applying to take loan')
                                     </h5>
                                     <p class="text-center text--danger">(@lang('Be Sure Before Confirm'))</p>
 
@@ -44,7 +44,7 @@
 
                                         <li class="fw-bold text--danger">
                                             <span class="caption">@lang('You\'ll Need To Pay')</span>
-                                            <span class="value">{{ showAmount($total_amount_payable) }}</span>
+                                            <span class="value">{{ showAmount($total_amount_payable) }} <br> ( {{ showAmount($total_amount_payable/$plan->total_installment) }} every {{ $plan->installment_interval }} days )</span>
                                         </li>
                                     </ul>
 
@@ -53,7 +53,7 @@
                                             <small class="text--danger d-block mb-3 mt-2">*
                                                 @lang('If an installment is delayed for')
                                                 <span class="fw-bold">{{ $plan->delay_value }}</span> @lang('or more days then, an amount of'),
-                                                <span class="fw-bold">{{ showAmount($plan->delay_charge) }}</span>
+                                                <span class="fw-bold">{{ ($plan->percent_charge/100) * $amount }}</span>
                                                 @lang('will be applied for each day.')
                                             </small>
                                         @endif

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Installment;
+use App\Models\Loan;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -96,10 +97,12 @@ class LoanDelay extends Command
             if (now()->greaterThan($graceEndDate)) {
 
                 $delayCharge = 0;
-                if (!empty($plan->fixed_charge)) {
+                if ($plan->fixed_charge > 0) {
                     $delayCharge = $plan->fixed_charge;
                 } elseif (!empty($plan->percent_charge)) {
-                    $delayCharge = ($loan->charge_per_installment ?? 0) * $plan->percent_charge / 100;
+                    $unpaid_loan_count = Installment::where('loan_id',$loan->id)->whereNull('given_at')->count();
+                    $remaining_loan_balance = $loan->per_installment * $unpaid_loan_count;
+                    $delayCharge = $remaining_loan_balance * ($plan->percent_charge / 100);
                 }
 
                 // Apply and save
