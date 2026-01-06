@@ -170,6 +170,21 @@
             min-height: 140px;
         }
 
+        .signature-header {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .signature-images {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .signature-images td {
+            border: none;
+            vertical-align: middle;
+            text-align: center;
+        }
+
         /* Page Break */
         .page-break {
             page-break-after: always;
@@ -223,7 +238,7 @@
 <p><strong>Lender:</strong></p>
 
 <p style="margin: 10px 0 5px 25px;">
-    <strong>Pienaar Limited t/a PienaarBank</strong><br />
+    <strong>Pienaar Limited T/A Pienaar Group</strong><br />
     14–16 Averof Road,<br />
     Kamma Heights,<br />
     Port Elizabeth,<br />
@@ -311,8 +326,8 @@
 <div class="bullet-item"><strong>• Total Instalments:</strong> {{total_installment}}</div>
 <div class="bullet-item"><strong>• Repayment Interval:</strong> Every {{installment_interval}} Days</div>
 <div class="bullet-item"><strong>• Instalment Amount:</strong> R{{per_installment}}</div>
-<div class="bullet-item"><strong>• Profit Percentage:</strong> {{profit_percentage}}%</div>
-<div class="bullet-item"><strong>• Application Fixed Charge:</strong> R{{application_fixed_charge}}</div>
+<div class="bullet-item"><strong>• Percentage Charge:</strong> {{profit_percentage}}%</div>
+<div class="bullet-item"><strong>• Application Fixed Charge:</strong> R{{application_percent_charge}}</div>
 
 <p style="margin-top: 10px;">A detailed payment schedule is available in the Borrower's PienaarBank online portal.</p>
 
@@ -326,15 +341,15 @@
 <table class="info-table">
     <tr>
         <td class="label">Bank:</td>
-        <td>{{bank_name}}</td>
+        <td></td>
     </tr>
     <tr>
         <td class="label">Account Number:</td>
-        <td>{{bank_account}}</td>
+        <td></td>
     </tr>
     <tr>
         <td class="label">Branch Code:</td>
-        <td>{{branch_code}}</td>
+        <td></td>
     </tr>
 </table>
 
@@ -524,53 +539,35 @@
 
     <table class="signature-table">
         <tr>
-            <td class="header-cell" style="width: 50%;">
-                FOR AND ON BEHALF OF PIENAAR<br />GROUP
+            <td class="signature-header" width="50%">
+                FOR AND ON BEHALF OF PIENAAR GROUP
             </td>
-            <td class="header-cell" style="width: 50%;">
+            <td class="signature-header" width="50%">
                 FOR AND ON BEHALF OF BORROWER
             </td>
         </tr>
         <tr>
-            <td class="signature-content">
-                <!-- Nested table for signature and seal side by side -->
-                <table style="width: 100%; border: none; border-collapse: collapse;">
+            <td style="padding: 20px !important">
+                <table class="signature-images">
                     <tr>
-                        <td style="width: 50%; vertical-align: middle; border: none; padding: 0;">
-                            <!-- Lender Signature Image -->
-                            <img src="{{lender_signature}}" style="width: 150px; height: auto; display: block;" alt="Signature">
+                        <td width="50%">
+                            <img src="{{lender_signature}}" style="max-width:160px;">
                         </td>
-                        <td style="width: 50%; vertical-align: middle; text-align: center; border: none; padding: 0;">
-                            <!-- Company Seal Image -->
-                            <img src="{{company_seal}}" style="width: 130px; height: auto; display: block; margin: 0 auto;" alt="Seal">
+                        <td width="50%">
+                            <img src="{{company_seal}}" style="max-width:140px;">
                         </td>
                     </tr>
                 </table>
 
-                <p style="margin: 15px 0 0 0; font-weight: bold; font-size: 10pt;">
-                    Senior Advocate Sayed Abedin
-                </p>
-                <p style="margin: 2px 0 0 0; font-size: 9pt; font-style: italic;">
-                    (BA MBA LLB LLM)
-                </p>
-
-                <p style="margin: 8px 0 0 0; font-size: 9pt; font-style: italic;">
-                    For and on behalf of PIENAAR GROUP LIMITED
+                <p style="margin-top:20px;">
+                    Senior Advocate Sayed Abedin (BA MBA LLB LLM)<br>
+                    For and on behalf of PIENAAR GROUP
                 </p>
             </td>
-            <td class="signature-content">
-                <p style="margin: 0 0 10px 0;">
-                    <strong>Name:</strong> {{first_name}} {{last_name}}
-                </p>
-
-
-                <p style="margin: 0 0 5px 0;">
-                    <strong>Signature:</strong>
-                </p>
-
-                <p style="margin: 0 0 5px 0;">
-                    <strong>Date:</strong>
-                </p>
+            <td style="padding: 20px !important">
+                <p>Name: {{first_name}} {{last_name}}</p>
+                <p>Signature: </p>
+                <p>Date: </p>
             </td>
         </tr>
     </table>

@@ -204,58 +204,70 @@ class LoanController extends Controller {
         $template = str_replace('{{logo}}', $logoPath, $template);
 
         // Replace dynamic values
-        $template = str_replace([
-            '{{first_name}}',
-            '{{last_name}}',
-            '{{email}}',
-            '{{mobile}}',
-            '{{address}}',
-            '{{city}}',
-            '{{state}}',
-            '{{zip}}',
-            '{{country}}',
-            '{{plan_name}}',
-            '{{amount}}',
-            '{{total_installment}}',
-            '{{installment_interval}}',
-            '{{per_installment}}',
-            '{{profit_percentage}}',
-            '{{application_fixed_charge}}',
-//            '{{application_percent_charge}}',
-            '{{bank_name}}',
-            '{{bank_account}}',
-            '{{branch_code}}',
-            '{{delay}}',
-            '{{fixed_charge}}',
-            '{{percent_charge}}',
-            '{{site_currency}}'
-        ],
+        $template = str_replace(
             [
-            $user->firstname,
-            $user->lastname,
-            $user->email,
-            $user->mobile,
-            $user->address,
-            $user->city,
-            $user->state,
-            $user->zip,
-            $user->country_name,
-            $plan->name,
+                '{{first_name}}',
+                '{{last_name}}',
+                '{{email}}',
+                '{{mobile}}',
+                '{{address}}',
+                '{{city}}',
+                '{{state}}',
+                '{{zip}}',
+                '{{country}}',
+
+                '{{loan_number}}',
+                '{{plan_name}}',
+                '{{amount}}',
+                '{{total_installment}}',
+                '{{installment_interval}}',
+                '{{per_installment}}',
+                '{{profit_percentage}}',
+                '{{application_fixed_charge}}',
+                '{{application_percent_charge}}',
+
+//                '{{bank_name}}',
+//                '{{bank_account}}',
+//                '{{branch_code}}',
+
+                '{{delay}}',
+                '{{fixed_charge}}',
+                '{{percent_charge}}',
+                '{{site_currency}}'
+            ],
+            [
+                $user->firstname,
+                $user->lastname,
+                $user->email,
+                $user->mobile,
+                $user->address,
+                $user->city,
+                $user->state,
+                $user->zip,
+                $user->country_name,
+
+                $loan->loan_number,
+                $plan->name,
                 number_format($loan->amount, 2, '.', ''),
-            $loan->total_installment,
-            $plan->installment_interval,
-                number_format($loan->per_installment,2, '.', ''),
-            $plan->per_installment,
-                number_format($plan->application_fixed_charge,2, '.', ''),
-//            $plan->application_percent_charge,
-            $user->bank_name,
-            $user->bank_account,
-            $user->branch_code,
-            $loan->delay_value,
-                number_format($plan->fixed_charge,2, '.', ''),
-            $plan->per_installment,
-            config('app.currency', 'ZAR')
-        ], $template);
+                $loan->total_installment,
+                $plan->installment_interval,
+                number_format($loan->per_installment, 2, '.', ''),
+                $plan->per_installment,
+                number_format($plan->application_fixed_charge, 2, '.', ''),
+                ($plan->application_percent_charge/100) * $loan->amount,
+
+//                $user->bank_name,
+//                $user->bank_account,
+//                $user->branch_code,
+
+                $loan->delay_value,
+                number_format($plan->fixed_charge, 2, '.', ''),
+                $plan->percent_charge,
+                config('app.currency', 'ZAR')
+            ],
+            $template
+        );
+
 
         $pdf->writeHTML($template, true, false, true, false, '');
 
