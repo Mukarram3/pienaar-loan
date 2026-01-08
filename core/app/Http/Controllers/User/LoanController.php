@@ -174,6 +174,7 @@ class LoanController extends Controller {
         $shortcodes['last_name'] = $user->lastname;
         $shortcodes['mobile'] = $user->mobile;
         $shortcodes['email'] = $user->email;
+        $shortcodes['application_percent_charge'] = $percentCharge;
 
         $pdfPath = $this->generateLoanPdf($user, $loan, $plan);
 
