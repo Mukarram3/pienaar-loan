@@ -516,6 +516,7 @@ class ManageUsersController extends Controller
         $staff->firstname     = $request->name;
         $staff->username = $request->username;
         $staff->email    = $request->email;
+        $staff->profile_complete    = Status::YES;
         $staff->password = $request->password ? Hash::make($request->password) : $staff->password;
         $staff->save();
         $notify[] = ['success', $message];
