@@ -171,7 +171,8 @@ class ManageUsersController extends Controller
         $request->validate([
             'firstname' => 'required|string|max:40',
             'lastname' => 'required|string|max:40',
-            'email' => 'required|email|string|max:40|unique:users,email,' . $user->id,
+            'email'    => 'required|email',
+//            'email' => 'required|email|string|max:40|unique:users,email,' . $user->id,
             'mobile' => 'required|string|max:40',
             'country' => 'required|in:'.$countries,
         ]);
@@ -528,9 +529,16 @@ class ManageUsersController extends Controller
         $request->validate([
             'username' => 'required|unique:admins,username,' . $id,
             'name'     => 'required',
-            'email'    => 'required|unique:admins,email,' . $id,
+            'email'    => 'required|email',
             'password' => !$id ? 'required|min:6' : 'nullable',
         ]);
+
+//        $request->validate([
+//            'username' => 'required|unique:admins,username,' . $id,
+//            'name'     => 'required',
+//            'email'    => 'required|unique:admins,email,' . $id,
+//            'password' => !$id ? 'required|min:6' : 'nullable',
+//        ]);
     }
 
 }
