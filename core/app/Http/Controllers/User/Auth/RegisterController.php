@@ -54,7 +54,7 @@ class RegisterController extends Controller
         $validate     = Validator::make($data, [
             'firstname' => 'required',
             'lastname'  => 'required',
-            'email'     => 'required|string|email|unique:users',
+            'email'     => 'required|string|email',
             'password'  => ['required', 'confirmed', $passwordValidation],
             'captcha'   => 'sometimes|required',
             'agree'     => $agree
@@ -162,9 +162,9 @@ class RegisterController extends Controller
         $exist['data'] = false;
         $exist['type'] = null;
         if ($request->email) {
-            $exist['data'] = User::where('email',$request->email)->exists();
-            $exist['type'] = 'email';
-            $exist['field'] = 'Email';
+//            $exist['data'] = User::where('email',$request->email)->exists();
+//            $exist['type'] = 'email';
+//            $exist['field'] = 'Email';
         }
         if ($request->mobile) {
             $exist['data'] = User::where('mobile',$request->mobile)->where('dial_code',$request->mobile_code)->exists();
