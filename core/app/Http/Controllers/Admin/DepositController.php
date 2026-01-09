@@ -129,7 +129,15 @@ class DepositController extends Controller
         $notify[] = ['success', 'Deposit request approved successfully'];
 
         $user = User::find($deposit->user_id);
-        notify($user, 'DEPOSIT_APPROVE', []);
+
+        notify($user, 'DEPOSIT_APPROVE', [
+            'method_amount' => showAmount($deposit->final_amount,currencyFormat:false),
+            'amount' => showAmount($deposit->amount,currencyFormat:false),
+            'charge' => showAmount($deposit->charge,currencyFormat:false),
+            'rate' => showAmount($deposit->rate,currencyFormat:false),
+            'trx' => $deposit->trx,
+            'post_balance' => showAmount($user->balance)
+        ]);
 
         return to_route('admin.deposit.pending')->withNotify($notify);
     }
