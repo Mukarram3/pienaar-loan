@@ -95,6 +95,8 @@ class LoanController extends Controller {
 
         $percentCharge = $amount * $plan->application_percent_charge / 100;
 
+        dd($percentCharge);
+
         $applicationFee = $plan->application_fixed_charge + $percentCharge;
 
         if ($applicationFee > $user->balance) {
