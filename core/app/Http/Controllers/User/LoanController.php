@@ -95,8 +95,6 @@ class LoanController extends Controller {
 
         $percentCharge = $amount * $plan->application_percent_charge / 100;
 
-        dd($percentCharge);
-
         $applicationFee = $plan->application_fixed_charge + $percentCharge;
 
         if ($applicationFee > $user->balance) {
@@ -176,7 +174,7 @@ class LoanController extends Controller {
         $shortcodes['last_name'] = $user->lastname;
         $shortcodes['mobile'] = $user->mobile;
         $shortcodes['email'] = $user->email;
-        $shortcodes['application_percent_charge'] = $percentCharge;
+        $shortcodes['application_percent_charge'] = $applicationFee;
 
         $pdfPath = $this->generateLoanPdf($user, $loan, $plan);
 

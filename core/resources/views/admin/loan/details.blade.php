@@ -72,7 +72,7 @@
                             @csrf
                             <input type="hidden" name="id" value="{{ $loan->id }}">
                             <div class="form-group">
-                                <label>@lang('Assisgn Loan')</label>
+                                <label>@lang('Assign Loan')</label>
                                 <select name="admin_id" class="form-control" required>
                                     <option value="" disabled selected>@lang('Select One')</option>
                                     @foreach (\App\Models\Admin::where('status',1)->where('id', '!=', 1)->get() as $admin)
