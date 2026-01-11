@@ -89,7 +89,9 @@
 
                                         <x-viser-form identifier="id" identifierValue="{{ $plan->form_id }}" />
 
-                                        <button type="submit" class="btn btn--base w-100" @disabled($applicationFee > $userBalance)><i class="las la-check-circle"></i> @lang('Apply')</button>
+                                        <button type="submit" class="btn btn--base w-100"
+{{--                                            @disabled($applicationFee > $userBalance)--}}
+                                        ><i class="las la-check-circle"></i> @lang('Apply')</button>
                                     </form>
                                 </div>
                             </div>
