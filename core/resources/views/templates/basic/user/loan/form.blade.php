@@ -30,10 +30,10 @@
                                             <span class="value">{{ showAmount($amount) }}</span>
                                         </li>
 
-                                        <li>
-                                            <span class="caption">@lang('Total Installment')</span>
-                                            <span class="value">{{ $plan->total_installment }}</span>
-                                        </li>
+{{--                                        <li>--}}
+{{--                                            <span class="caption">@lang('Total Installment')</span>--}}
+{{--                                            <span class="value">{{ $plan->total_installment }}</span>--}}
+{{--                                        </li>--}}
 
                                         @php $perIntallment = $amount * $plan->per_installment / 100; @endphp
 
@@ -44,7 +44,9 @@
 
                                         <li class="fw-bold text--danger">
                                             <span class="caption">@lang('You\'ll Need To Pay')</span>
-                                            <span class="value">{{ showAmount($total_amount_payable) }} <br> ( {{ showAmount($total_amount_payable/$plan->total_installment) }} every {{ $plan->installment_interval }} days )</span>
+                                            <span class="value">
+{{--                                                {{ showAmount($total_amount_payable) }} <br> --}}
+                                                ( {{ showAmount($total_amount_payable/$plan->total_installment) }} every {{ $plan->installment_interval }} days )</span>
                                         </li>
                                     </ul>
 

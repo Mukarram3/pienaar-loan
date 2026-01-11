@@ -97,10 +97,10 @@ class LoanController extends Controller {
 
         $applicationFee = $plan->application_fixed_charge + $percentCharge;
 
-        if ($applicationFee > $user->balance) {
-            $notify[] = ['error', 'Insufficient balance. You have to pay the application fee.'];
-            return back()->withNotify($notify)->withInput($request->all());
-        }
+//        if ($applicationFee > $user->balance) {
+//            $notify[] = ['error', 'Insufficient balance. You have to pay the application fee.'];
+//            return back()->withNotify($notify)->withInput($request->all());
+//        }
 
         $plan   = LoanPlan::active()->with('category')->where('id', $plan->id)->firstOrFail();
 
