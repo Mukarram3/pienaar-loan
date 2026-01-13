@@ -310,7 +310,7 @@ class LoanController extends Controller {
             $installment->save();
 
             $user = auth()->user();
-            $user->balance -= ($loan->per_installment + $installment->delay_charge);
+            $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
             $user->save();
 
             $shortCodes = $loan->shortCodes();
@@ -320,7 +320,7 @@ class LoanController extends Controller {
             $shortCodes['current_installment'] = $current_installment_number;
             $shortCodes['total_installment'] = $total_installments;
 
-            notify($user, 'Loan_Repayment_Received', $shortCodes);
+//            notify($user, 'Loan_Repayment_Received', $shortCodes);
 
             $allInstallments      = Installment::where('loan_id', $installment->loan_id)->count();
             $paidInstallments     = Installment::where('loan_id', $installment->loan_id)
