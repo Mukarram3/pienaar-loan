@@ -185,7 +185,7 @@
                             <th>@lang('Loan Number')</th>
                             <th>@lang('Plan Name')</th>
                             <th>@lang('Loan Amount')</th>
-                            <th>@lang('Installment')</th>
+                            <th>@lang('Instalment')</th>
                             <th>@lang('Installment Amount')</th>
                             <th>@lang('Next Installment')</th>
                         </tr>

@@ -13,7 +13,7 @@
                                     <th>@lang('User')</th>
                                     <th>@lang('Amount')</th>
                                     <th>@lang('Instalment Amount')</th>
-                                    <th>@lang('Instalment')</th>
+                                    <th>@lang('Instalments')</th>
                                     <th>@lang('Created') | </brs> @lang('Next Instalment')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Action')</th>
@@ -80,7 +80,7 @@
 
                                                 <a class="btn btn-sm btn-outline--success"
                                                     href="{{ route('admin.loan.installments', $loan->id) }}">
-                                                    <i class="las la-history"></i> @lang('Installments')
+                                                    <i class="las la-history"></i> @lang('Instalments')
                                                 </a>
                                             </div>
                                         </td>

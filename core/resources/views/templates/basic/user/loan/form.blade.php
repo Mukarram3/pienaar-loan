@@ -31,14 +31,14 @@
                                         </li>
 
                                         <li>
-                                            <span class="caption">@lang('Total Installment')</span>
+                                            <span class="caption">@lang('Total Instalment')</span>
                                             <span class="value">{{ $plan->total_installment }}</span>
                                         </li>
 
                                         @php $perIntallment = $amount * $plan->per_installment / 100; @endphp
 
                                         <li>
-                                            <span class="caption">@lang('Per Installment')</span>
+                                            <span class="caption">@lang('Per Instalment')</span>
                                             <span class="value">{{ showAmount($total_amount_payable/$plan->total_installment) }}</span>
                                         </li>
 

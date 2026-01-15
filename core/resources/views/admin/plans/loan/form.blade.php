@@ -63,7 +63,7 @@
 
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>@lang('Per Installment')</label>
+                                    <label>@lang('Per Instalment')</label>
                                     <div class="input-group">
                                         @php $perInstallment = isset($plan) ? getAmount($plan->per_installment) : null; @endphp
                                         <input class="form-control" name="per_installment" type="number"

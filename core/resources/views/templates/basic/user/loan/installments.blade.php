@@ -35,7 +35,7 @@
                             <div class="mb-2">
                                 <h4 class="text--base value"><sup class="top-0 fw-light me-1">{{ showAmount($loan->per_installment) }}
                                 </h4>
-                                <p class="fw-bold caption">@lang('Per Installment')</p>
+                                <p class="fw-bold caption">@lang('Per Instalment')</p>
                             </div>
                         </div>
                     </div>
@@ -51,7 +51,7 @@
                             </div>
                             <div class="mb-2">
                                 <h4 class="text--base value"><sup class="top-0 fw-light me-1">{{ $loan->total_installment }}</h4>
-                                <p class="fw-bold caption">@lang('Total Installment')</p>
+                                <p class="fw-bold caption">@lang('Total Instalment')</p>
                             </div>
                         </div>
                         <div class="d-flex flex-wrap justify-content-between align-items-center">

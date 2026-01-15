@@ -13,7 +13,7 @@
                                     <th>@lang('Category')</th>
                                     <th>@lang('Application Charge')</th>
                                     <th>@lang('Limit')</th>
-                                    <th>@lang('Installment')</th>
+                                    <th>@lang('Instalment')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Action')</th>
                                 </tr>

@@ -27,12 +27,12 @@
                         </li>
 
                         <li class="list-group-item">
-                            <span class="fw-bold">@lang('Per Installment')</span>
+                            <span class="fw-bold">@lang('Per Instalment')</span>
                             <span>{{ showAmount($loan->per_installment) }}</span>
                         </li>
 
                         <li class="list-group-item">
-                            <span class="fw-bold">@lang('Total Installment')</span>
+                            <span class="fw-bold">@lang('Total Instalment')</span>
                             <span>{{ $loan->total_installment }}</span>
                         </li>
 
