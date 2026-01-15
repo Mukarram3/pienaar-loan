@@ -30,10 +30,10 @@
                                             <span class="value">{{ showAmount($amount) }}</span>
                                         </li>
 
-{{--                                        <li>--}}
-{{--                                            <span class="caption">@lang('Total Installment')</span>--}}
-{{--                                            <span class="value">{{ $plan->total_installment }}</span>--}}
-{{--                                        </li>--}}
+                                        <li>
+                                            <span class="caption">@lang('Total Installment')</span>
+                                            <span class="value">{{ $plan->total_installment }}</span>
+                                        </li>
 
                                         @php $perIntallment = $amount * $plan->per_installment / 100; @endphp
 
