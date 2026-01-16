@@ -289,7 +289,9 @@ class LoanController extends Controller {
 
     public function installments($loanNumber) {
         $loan         = Loan::where('loan_number', $loanNumber)->where('user_id', auth()->id())->firstOrFail();
-        $installments = $loan->installments()->paginate(getPaginate());
+        $installments = $loan->installments()
+            ->orderBy('installment_date', 'asc')
+            ->paginate(getPaginate());
         $pageTitle    = 'Loan Installments';
         return view('Template::user.loan.installments', compact('pageTitle', 'installments', 'loan'));
     }
@@ -320,7 +322,14 @@ class LoanController extends Controller {
             $shortCodes['current_installment'] = $current_installment_number;
             $shortCodes['total_installment'] = $total_installments;
 
-//            notify($user, 'Loan_Repayment_Received', $shortCodes);
+            notify($user, 'Loan_Repayment_Received', $shortCodes);
+            $loan_manager = Admin::find($loan->approved_by);
+            if ($loan_manager){
+                notify($loan_manager, 'Loan_Repayment_Received', $shortCodes);
+            }
+            else{
+                notify(Admin::where('id','1')->first(), 'Loan_Repayment_Received', $shortCodes);
+            }
 
             $allInstallments      = Installment::where('loan_id', $installment->loan_id)->count();
             $paidInstallments     = Installment::where('loan_id', $installment->loan_id)

@@ -94,7 +94,18 @@ class LoanController extends Controller
         $user = $loan->user;
         $pdfPath = $this->generateLoanPdf($user, $loan, $loan->plan);
 
-        notify($user, "LOAN_APPROVE", $loan->shortCodes(), null, true, null, [$pdfPath]);
+        $shortcodes = $loan->shortCodes();
+        $manager = Admin::find($loan->approved_by);
+        $shortcodes['manager_full_name'] = $manager->name;
+
+        notify($user, "LOAN_APPROVE", $shortcodes, null, true, null, [$pdfPath]);
+        if ($manager){
+            notify($manager, 'LOAN_APPROVE', $shortcodes);
+        }
+        else{
+            notify(Admin::where('id','1')->first(), 'LOAN_APPROVE', $shortcodes);
+        }
+
         $notify[] = ['success', 'Loan approved successfully'];
         return back()->withNotify($notify);
     }

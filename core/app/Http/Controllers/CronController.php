@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
 use Carbon\Carbon;
 use App\Models\CronJob;
 use App\Lib\CurlRequest;
@@ -87,11 +88,20 @@ class CronController extends Controller
                 if ($user->balance < $amount) {
                     $lastNotification = $loan->due_notification_sent ?? now()->subHours(10);
 
-
                     if ($lastNotification->diffInHours(now()) >= 10) {
                         // Notify user after 10 hours from the previous one.
                         $shortCodes['installment_date'] = showDateTime($installment->installment_date, 'd M, Y');
+                        $manager = Admin::find($loan->approved_by);
+                        $shortCodes['manager_full_name'] = $manager->name;
                         notify($user, 'LOAN_INSTALLMENT_DUE', $shortCodes);
+
+                        if ($manager){
+                            notify($manager, 'LOAN_INSTALLMENT_DUE', $shortCodes);
+                        }
+                        else{
+                            notify(Admin::where('id','1')->first(), 'LOAN_INSTALLMENT_DUE', $shortCodes);
+                        }
+
                         $loan->due_notification_sent = now();
                         $loan->save();
                     }

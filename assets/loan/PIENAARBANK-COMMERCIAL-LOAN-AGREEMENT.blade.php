@@ -573,7 +573,24 @@
     </table>
 </div>
 
-<div class="page-number">5</div>
+<div class="divider"></div>
+
+<div class="section-title">Commercial Loan Consolidation and Novation (Outside the NCA)</div>
+
+<p>This agreement constitutes the sole and operative commercial loan facility between the Parties. To the
+    extent that any prior loan, advance, facility, or agreement (whether written or oral) exists or previously
+    existed between the Parties, such facility is hereby settled, consolidated, novated, and replaced by this
+    agreement. All rights, obligations, balances, fees, and liabilities arising from any prior facility are fully
+    extinguished and are governed exclusively by the terms of this agreement.</p>
+
+<p>The Parties record that this is a commercial lending transaction concluded at arm’s length and that the
+    provisions of the National Credit Act, 34 of 2005, do not apply to this agreement.</p>
+
+<div class="footer">
+    <strong>Pienaar Group</strong><br>
+    Loans@PienaarGroupExecutive.com
+</div>
+
 
 </body>
 </html>

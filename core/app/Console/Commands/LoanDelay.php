@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Admin;
 use App\Models\Installment;
 use App\Models\Loan;
 use Illuminate\Console\Command;
@@ -70,12 +71,30 @@ class LoanDelay extends Command
 
 //            Reminder - 3 days before due date
             if ($daysUntilDue == 3) {
+                $manager = Admin::find($loan->approved_by);
+                $shortCodes['manager_full_name'] = $manager->name;
+
+                if ($manager){
+                    notify($manager, 'LOAN_REMINDER_THREE_DAYS_DUE', $shortCodes);
+                }
+                else{
+                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_THREE_DAYS_DUE', $shortCodes);
+                }
                 notify($user, "LOAN_REMINDER_THREE_DAYS_DUE", $shortCodes);
                 continue;
             }
 
             // 📅 2. On due date
             if ($daysUntilDue == 2) {
+                $manager = Admin::find($loan->approved_by);
+                $shortCodes['manager_full_name'] = $manager->name;
+
+                if ($manager){
+                    notify($manager, 'LOAN_REMINDER_TWO_DAYS_DUE', $shortCodes);
+                }
+                else{
+                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_TWO_DAYS_DUE', $shortCodes);
+                }
                 notify($user, "LOAN_REMINDER_TWO_DAYS_DUE", $shortCodes);
                 continue;
             }
@@ -111,6 +130,16 @@ class LoanDelay extends Command
 
                 $shortCodes['late_fee'] = $delayCharge;
                 $shortCodes['balance'] = $user->balance;
+
+                $manager = Admin::find($loan->approved_by);
+                $shortCodes['manager_full_name'] = $manager->name;
+
+                if ($manager){
+                    notify($manager, 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
+                }
+                else{
+                    notify(Admin::where('id','1')->first(), 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
+                }
                 notify($user, "CHARGES_APPLIED_ON_LOAN", $shortCodes);
 
                 Log::info("Delay charge applied", [

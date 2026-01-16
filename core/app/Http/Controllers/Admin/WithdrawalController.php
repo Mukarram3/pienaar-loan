@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
+use App\Models\Admin;
+use App\Models\Loan;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
@@ -103,6 +105,9 @@ class WithdrawalController extends Controller
         $withdraw->admin_feedback = $request->details;
         $withdraw->save();
 
+        $loan = Loan::where('user_id', $withdraw->user_id)->first();
+        $manager = Admin::find($loan->approved_by);
+
         notify($withdraw->user, 'WITHDRAW_APPROVE', [
             'method_name' => $withdraw->method->name,
             'method_currency' => $withdraw->currency,
@@ -111,7 +116,8 @@ class WithdrawalController extends Controller
             'charge' => showAmount($withdraw->charge,currencyFormat:false),
             'rate' => showAmount($withdraw->rate,currencyFormat:false),
             'trx' => $withdraw->trx,
-            'admin_details' => $request->details
+            'admin_details' => $request->details,
+            'manager_full_name' => $manager->name
         ]);
 
         $notify[] = ['success', 'Withdrawal approved successfully'];
