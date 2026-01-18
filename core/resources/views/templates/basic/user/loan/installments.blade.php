@@ -8,7 +8,7 @@
                 <a href="{{ route('user.loan.list') }}" class="btn btn--base btn--sm"><i class="las la-list-alt"></i>
                     @lang('My Loan List')</a>
             </div>
-            <p>@lang('Empowering dreams, one installment at a time.')</p>
+            <p>@lang('Empowering dreams, one instalment at a time.')</p>
         </div>
 
         <div class="row gy-4">
@@ -68,7 +68,7 @@
                             <div class="mb-2">
                                 <h4 class="text--base value"><sup class="top-0 fw-light me-1">{{ $loan->given_installment }}
                                 </h4>
-                                <p class="fw-bold caption">@lang('Given Installment')</p>
+                                <p class="fw-bold caption">@lang('Given Instalment')</p>
                             </div>
 
                         </div>

@@ -5,7 +5,7 @@
                 <thead>
                     <tr>
                         <th>@lang('S.N.')</th>
-                        <th>@lang('Installment Date')</th>
+                        <th>@lang('Instalment Date')</th>
                         <th>@lang('Given On')</th>
                         <th>@lang('Delay')</th>
                         <th>@lang('Charge')</th>

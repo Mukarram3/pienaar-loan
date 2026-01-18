@@ -7,9 +7,9 @@
                         <thead>
                             <tr>
                                 <th>@lang('S.N.')</th>
-                                <th>@lang('Installment Amount')</th>
-                                <th>@lang('Installment Date')</th>
-                                <th>@lang('Given On')</th>
+                                <th>@lang('Instalment Amount')</th>
+                                <th>@lang('Instalment Date')</th>
+                                <th>@lang('Date Paid')</th>
                                 <th>@lang('Delay')</th>
                                 <th>@lang('Delay Amount')</th>
                                 <th>@lang('Action')</th>

@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\Withdrawal;
 use App\Models\WithdrawMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class WithdrawController extends Controller
 {
@@ -130,16 +131,23 @@ class WithdrawController extends Controller
         $adminNotification->click_url = urlPath('admin.withdraw.data.details',$withdraw->id);
         $adminNotification->save();
 
-        notify($user, 'WITHDRAW_REQUEST', [
+        $bankShortcodes = [];
+
+        foreach ($userData as $field) {
+            $key = Str::slug($field['name'], '_'); // bank_name, account_number, etc.
+            $bankShortcodes[$key] = $field['value'];
+        }
+
+        notify($user, 'WITHDRAW_REQUEST', array_merge([
             'method_name' => $withdraw->method->name,
             'method_currency' => $withdraw->currency,
-            'method_amount' => showAmount($withdraw->final_amount,currencyFormat:false),
-            'amount' => showAmount($withdraw->amount,currencyFormat:false),
-            'charge' => showAmount($withdraw->charge,currencyFormat:false),
-            'rate' => showAmount($withdraw->rate,currencyFormat:false),
+            'method_amount' => showAmount($withdraw->final_amount, currencyFormat: false),
+            'amount' => showAmount($withdraw->amount, currencyFormat: false),
+            'charge' => showAmount($withdraw->charge, currencyFormat: false),
+            'rate' => showAmount($withdraw->rate, currencyFormat: false),
             'trx' => $withdraw->trx,
-            'post_balance' => showAmount($user->balance,currencyFormat:false),
-        ]);
+            'post_balance' => showAmount($user->balance, currencyFormat: false),
+        ], $bankShortcodes));
 
         $admins = Admin::all();
 

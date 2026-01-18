@@ -96,7 +96,7 @@ class LoanController extends Controller
 
         $shortcodes = $loan->shortCodes();
         $manager = Admin::find($loan->approved_by);
-        $shortcodes['manager_full_name'] = $manager->name;
+        $shortcodes['manager_full_name'] = $manager?->name ? : '';
 
         notify($user, "LOAN_APPROVE", $shortcodes, null, true, null, [$pdfPath]);
         if ($manager){
@@ -187,9 +187,9 @@ class LoanController extends Controller
                 '{{lender_signature}}',
                 '{{company_seal}}',
 
-//                '{{bank_name}}',
-//                '{{bank_account}}',
-//                '{{branch_code}}',
+                '{{bank_name}}',
+                '{{account_number}}',
+                '{{branch_code}}',
 
                 '{{delay}}',
                 '{{fixed_charge}}',
@@ -219,9 +219,9 @@ class LoanController extends Controller
                 asset('assets/images/Sayed-Abedin-Signature.png'),
                 asset('assets/images/Pienaar-Group-Gold-Foil-Seal-Jagged-Edge.png'),
 
-//                $user->bank_name,
-//                $user->bank_account,
-//                $user->branch_code,
+                $user->bank_name,
+                $user->account_number,
+                $user->branch_code,
 
                 $loan->delay_value,
                 number_format($plan->fixed_charge, 2, '.', ''),
