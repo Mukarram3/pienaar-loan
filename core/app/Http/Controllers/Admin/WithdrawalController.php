@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
+use App\Lib\FormProcessor;
 use App\Models\Admin;
 use App\Models\Loan;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class WithdrawalController extends Controller
 {
@@ -108,7 +110,25 @@ class WithdrawalController extends Controller
         $loan = Loan::where('user_id', $withdraw->user_id)->first();
         $manager = Admin::find($loan->approved_by);
 
-        notify($withdraw->user, 'WITHDRAW_APPROVE', [
+        $method = $withdraw->method;
+        if ($method->status == Status::DISABLE) {
+            abort(404);
+        }
+
+        $formData = @$method->form->form_data ?? [];
+
+        $formProcessor = new FormProcessor();
+        $validationRule = $formProcessor->valueValidation($formData);
+        $request->validate($validationRule);
+        $userData = $formProcessor->processFormData($request, $formData);
+        $bankShortcodes = [];
+
+        foreach ($userData as $field) {
+            $key = Str::slug($field['name'], '_'); // bank_name, account_number, etc.
+            $bankShortcodes[$key] = $field['value'];
+        }
+
+        notify($withdraw->user, 'WITHDRAW_APPROVE', array_merge([
             'method_name' => $withdraw->method->name,
             'method_currency' => $withdraw->currency,
             'method_amount' => showAmount($withdraw->final_amount,currencyFormat:false),
@@ -118,7 +138,7 @@ class WithdrawalController extends Controller
             'trx' => $withdraw->trx,
             'admin_details' => $request->details,
             'manager_full_name' => $manager->name
-        ]);
+        ], $bankShortcodes));
 
         $notify[] = ['success', 'Withdrawal approved successfully'];
         return to_route('admin.withdraw.data.pending')->withNotify($notify);
