@@ -213,7 +213,7 @@
                                     <span> @lang('Total') : {{ __($loan->total_installment) }}</span>
                                     <br>
                                     <small class="text--base">
-                                        @lang('Given') : {{ __($loan->given_installment) }}
+                                        @lang('Paid') : {{ __($loan->given_installment) }}
                                     </small>
                                 </td>
                                 <td>

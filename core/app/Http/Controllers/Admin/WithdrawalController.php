@@ -105,7 +105,7 @@ class WithdrawalController extends Controller
         $withdraw = Withdrawal::where('id',$request->id)->where('status',Status::PAYMENT_PENDING)->with('user')->firstOrFail();
         $withdraw->status = Status::PAYMENT_SUCCESS;
         $withdraw->admin_feedback = $request->details;
-        $withdraw->save();
+        // $withdraw->save();
 
         $loan = Loan::where('user_id', $withdraw->user_id)->first();
         $manager = Admin::find($loan->approved_by);
@@ -117,9 +117,18 @@ class WithdrawalController extends Controller
 
         $formData = @$method->form->form_data ?? [];
 
+        $cleanFormData = [];
+
+        foreach ($formData as $key => $data) {
+            $cleanKey = Str::slug($key, '_');
+            $cleanFormData[$cleanKey] = $data;
+        }
+
+        $formData = $cleanFormData;
+
         $formProcessor = new FormProcessor();
         $validationRule = $formProcessor->valueValidation($formData);
-        $request->validate($validationRule);
+        // $request->validate($validationRule);
         $userData = $formProcessor->processFormData($request, $formData);
         $bankShortcodes = [];
 
@@ -137,7 +146,7 @@ class WithdrawalController extends Controller
             'rate' => showAmount($withdraw->rate,currencyFormat:false),
             'trx' => $withdraw->trx,
             'admin_details' => $request->details,
-            'manager_full_name' => $manager->name
+            'manager_full_name' => $manager?->name ? : ''
         ], $bankShortcodes));
 
         $notify[] = ['success', 'Withdrawal approved successfully'];

@@ -15,9 +15,9 @@
                                     $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
                                     @endphp
                                     <h5 class="text-center">
-                                        @lang('You are applying to take loan')
+                                        @lang('Before applying for your loan')
                                     </h5>
-                                    <p class="text-center text--danger">(@lang('Be Sure Before Confirm'))</p>
+                                    <p class="text-center text--danger">(@lang('Please review your repayments'))</p>
 
                                     <ul class="caption-list-two">
                                         <li>
@@ -53,7 +53,7 @@
                                     <p class="px-2">
                                         @if ($plan->delay_value && getAmount($plan->delay_charge))
                                             <small class="text--danger d-block mb-3 mt-2">*
-                                                @lang('If an installment is delayed for')
+                                                @lang('If an instalment is delayed for')
                                                 <span class="fw-bold">{{ $plan->delay_value }}</span> @lang('or more days then, an amount of'),
                                                 <span class="fw-bold">{{ ($plan->percent_charge/100) * $amount }}</span>
                                                 @lang('will be applied for each day.')
