@@ -105,7 +105,7 @@ class WithdrawalController extends Controller
         $withdraw = Withdrawal::where('id',$request->id)->where('status',Status::PAYMENT_PENDING)->with('user')->firstOrFail();
         $withdraw->status = Status::PAYMENT_SUCCESS;
         $withdraw->admin_feedback = $request->details;
-        // $withdraw->save();
+         $withdraw->save();
 
         $loan = Loan::where('user_id', $withdraw->user_id)->first();
         $manager = Admin::find($loan->approved_by);

@@ -32,16 +32,21 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($installment->given_at)
-                                            @php
-                                                $delay = $installment->given_at->gt($installment->installment_date)
-                                                    ? $installment->given_at->diffInDays($installment->installment_date)
-                                                    : 0;
-                                            @endphp
-                                            {{ $delay }} @lang('Day')
-                                        @else
-                                            ...
-                                        @endif
+                                        @php
+                                            $delay = 0;
+
+                                            if ($installment->given_at) {
+                                                if ($installment->given_at->gt($installment->installment_date)) {
+                                                    $delay = (int) $installment->given_at->diffInDays($installment->installment_date, true);
+                                                }
+                                            } else {
+                                                if (now()->gt($installment->installment_date)) {
+                                                    $delay = (int) now()->diffInDays($installment->installment_date, true);
+                                                }
+                                            }
+                                        @endphp
+
+                                        {{ $delay }} @lang('Day')
                                     </td>
                                     <td>
                                         {{ $installment->delay_charge }}

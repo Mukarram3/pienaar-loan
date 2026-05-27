@@ -157,6 +157,13 @@
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/symfony/clock" />
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/symfony/finder" />
       <excludeFolder url="file://$MODULE_DIR$/core/vendor/tecnickcom/tcpdf" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/thecodingmachine/safe" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/sabberworm/php-css-parser" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/dompdf/php-svg-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/masterminds/html5" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/dompdf/dompdf" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/dompdf/php-font-lib" />
+      <excludeFolder url="file://$MODULE_DIR$/core/vendor/barryvdh/laravel-dompdf" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -62,7 +62,7 @@
                     </ul>
 
                     @if ($loan->status == Status::LOAN_REJECTED && $loan->admin_feedback)
-                        <h6 class="mt-3"> <i class="fa fa-info-circle text--danger" aria-hidden="true"></i>
+                        <h6 class="mt-3"><i class="fa fa-info-circle text--danger" aria-hidden="true"></i>
                             @lang('Reason of Rejection')</h6>
                         <p class="mt-2">{{ $loan->admin_feedback }}</p>
 
@@ -76,7 +76,8 @@
                                 <select name="admin_id" class="form-control" required>
                                     <option value="" disabled selected>@lang('Select One')</option>
                                     @foreach (\App\Models\Admin::where('status',1)->where('id', '!=', 1)->get() as $admin)
-                                        <option value="{{ $admin->id }}" {{ isset($loan->approved_by) && $loan->approved_by == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                                        <option
+                                            value="{{ $admin->id }}" {{ isset($loan->approved_by) && $loan->approved_by == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -97,7 +98,7 @@
             <div class="card  overflow-hidden box--shadow1">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2">@lang('Loan Form Submitted by User')</h5>
-                    <x-view-form-data :data="$loan->application_form" />
+                    <x-view-form-data :data="$loan->application_form"/>
 
                     @if( ($loan->status == Status::LOAN_APPROVED || $loan->status == Status::LOAN_RUNNING) && $loan->signed_agreement)
                         <h5 class="card-title border-bottom pb-2">@lang('Loan Agreement Submitted by User')</h5>
@@ -110,43 +111,91 @@
                         <span class="text-muted">No agreement uploaded</span>
                     @endif
 
-                        <div class="row mt-4">
-                            <div class="col-md-12">
-                                @if ($loan->status == Status::LOAN_PENDING)
-                                        <button class="btn btn-outline--warning confirmationBtn"
-                                                data-action="{{ route('admin.loan.review', $loan->id) }}"
-                                                data-question="@lang('Are you sure to Review this loan?')">
-                                            <i class="fas la-check"></i> @lang('Review')
-                                        </button>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            @if ($loan->status == Status::LOAN_PENDING)
+                                <button class="btn btn-outline--warning confirmationBtn"
+                                        data-action="{{ route('admin.loan.review', $loan->id) }}"
+                                        data-question="@lang('Are you sure to Review this loan?')">
+                                    <i class="fas la-check"></i> @lang('Review')
+                                </button>
+                            @endif
+                            @if($loan->status == Status::LOAN_IN_REVIEW)
+                                <button class="btn btn-outline--success confirmationBtn"
+                                        data-action="{{ route('admin.loan.approve', $loan->id) }}"
+                                        data-question="@lang('Are you sure to approve this loan?')">
+                                    <i class="fas la-check"></i> @lang('Approve')
+                                </button>
+                            @endif
+                            @if ($loan->status == Status::LOAN_APPROVED)
+                                <button class="btn btn-outline--warning confirmationBtn"
+                                        data-action="{{ route('admin.loan.release_funds', $loan->id) }}"
+                                        data-question="@lang('Are you sure to Release Funds for this loan?')">
+                                    <i class="fas la-check"></i> @lang('Release Funds')
+                                </button>
+                            @endif
+                            @if($loan->status != STATUS::LOAN_RUNNING)
+                                <button class="btn btn-outline--danger ms-1 rejectBtn"
+                                        data-action="{{ route('admin.loan.reject', $loan->id) }}">
+                                    <i class="fas fa-ban"></i> @lang('Reject')
+                                </button>
+                            @endif
+
+                            {{-- REPORTS & DOCUMENTS DROPDOWN --}}
+                            <div class="dropdown d-inline-block">
+                                <button class="btn btn-outline--primary dropdown-toggle" type="button"
+                                        id="reportsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-file-alt"></i> @lang('Reports & Documents')
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ route('admin.loan.statement.pdf', $loan->id) }}" target="_blank">
+                                            <i class="fas fa-file-pdf text--primary"></i> @lang('Statement of Loan Account')
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ route('admin.loan.redemption.quote', $loan->id) }}" target="_blank">
+                                            <i class="fas fa-file-invoice-dollar text--success"></i> @lang('Early Redemption Quote')
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{{ route('admin.loan.payment.history.pdf', $loan->id) }}"
+                                           target="_blank">
+                                            <i class="fas fa-history text--info"></i> @lang('Payment History')
+                                        </a>
+                                    </li>
+                                    @if($loan->signed_agreement)
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{{ route('admin.loan.view.agreement', $loan->id) }}"
+                                               target="_blank">
+                                                <i class="fas fa-file-contract text--warning"></i> @lang('Loan Agreement')
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li>
+                        <span class="dropdown-item disabled text-muted">
+                            <i class="fas fa-file-contract"></i> @lang('Loan Agreement') <small>(not uploaded)</small>
+                        </span>
+                                        </li>
                                     @endif
-                                    @if($loan->status == Status::LOAN_IN_REVIEW)
-                                        <button class="btn btn-outline--success confirmationBtn"
-                                                data-action="{{ route('admin.loan.approve', $loan->id) }}"
-                                                data-question="@lang('Are you sure to approve this loan?')">
-                                            <i class="fas la-check"></i> @lang('Approve')
-                                        </button>
-                                    @endif
-                                    @if ($loan->status == Status::LOAN_APPROVED)
-                                        <button class="btn btn-outline--warning confirmationBtn"
-                                                data-action="{{ route('admin.loan.release_funds', $loan->id) }}"
-                                                data-question="@lang('Are you sure to Release Funds for this loan?')">
-                                            <i class="fas la-check"></i> @lang('Release Funds')
-                                        </button>
-                                    @endif
-                                @if($loan->status != STATUS::LOAN_RUNNING)
-                                        <button class="btn btn-outline--danger ms-1 rejectBtn"
-                                                data-action="{{ route('admin.loan.reject', $loan->id) }}">
-                                            <i class="fas fa-ban"></i> @lang('Reject')
-                                        </button>
-                                    @endif
+                                </ul>
                             </div>
+
                         </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <x-confirmation-modal />
+    <x-confirmation-modal/>
 
     <div id="rejectModal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
@@ -162,7 +211,8 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>@lang('Reason of Rejection')</label>
-                            <textarea name="reason" maxlength="255" class="form-control" rows="5" required>{{ old('message') }}</textarea>
+                            <textarea name="reason" maxlength="255" class="form-control" rows="5"
+                                      required>{{ old('message') }}</textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -187,10 +237,10 @@
 
 @push('script')
     <script>
-        (function($) {
+        (function ($) {
             "use strict";
 
-            $('.rejectBtn').on('click', function() {
+            $('.rejectBtn').on('click', function () {
                 var modal = $('#rejectModal');
                 modal.find('form')[0].action = $(this).data('action');
                 modal.modal('show');

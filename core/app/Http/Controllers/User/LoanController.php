@@ -178,7 +178,11 @@ class LoanController extends Controller {
 
         $pdfPath = $this->generateLoanPdf($user, $loan, $plan);
 
+        $admin = User::where('email', 'Loans@PienaarGroupExecutive.com')->first();
+
         notify($user, "LOAN_APPLIED", $shortcodes, null, true, null, [$pdfPath]);
+        notify($admin, "LOAN_APPLIED", $shortcodes, null, true, null, [$pdfPath]);
+
         $notify[] = ['success', 'Loan application submitted successfully'];
         return to_route('user.loan.list')->withNotify($notify);
     }
@@ -292,7 +296,7 @@ class LoanController extends Controller {
         $installments = $loan->installments()
             ->orderBy('installment_date', 'asc')
             ->paginate(getPaginate());
-        $pageTitle    = 'Loan Installments';
+        $pageTitle    = 'Loan Instalments';
         return view('Template::user.loan.installments', compact('pageTitle', 'installments', 'loan'));
     }
 
@@ -307,9 +311,11 @@ class LoanController extends Controller {
             ->count();
         $current_installment_number = $paid_installments + 1;
 
-        if (auth()->user()->balance >= $loan->charge_per_installment + $installment->delay_charge){
             $installment->given_at = today();
             $installment->save();
+
+        $loan->given_installment = $current_installment_number;
+        $loan->save();
 
             $user = auth()->user();
             $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
@@ -344,10 +350,5 @@ class LoanController extends Controller {
 
             $notify[] = ['success', 'Installment Paid successfully'];
             return back()->withNotify($notify);
-        }
-        else{
-            $notify[] = ['error', 'Balance is less than Installment Amount'];
-            return back()->withNotify($notify);
-        }
     }
 }

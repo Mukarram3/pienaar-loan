@@ -8,6 +8,11 @@ Route::get('/clear', function () {
 //    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 
+Route::get('/test-pdf', function () {
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML('<h1>Test PDF</h1>');
+    return $pdf->stream('test.pdf');
+});
+
 // Cron Route
 Route::get('cron', 'CronController@cron')->name('cron');
 

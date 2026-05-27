@@ -7,10 +7,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Installment;
 use App\Models\Loan;
+use App\Models\RedemptionQuote;
+use App\Models\ReportLog;
 use App\Models\Transaction;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use TCPDF;
 
 class LoanController extends Controller
@@ -98,7 +103,11 @@ class LoanController extends Controller
         $manager = Admin::find($loan->approved_by);
         $shortcodes['manager_full_name'] = $manager?->name ? : '';
 
+        $admin = User::where('email', 'Loans@PienaarGroupExecutive.com')->first();
+
         notify($user, "LOAN_APPROVE", $shortcodes, null, true, null, [$pdfPath]);
+        notify($admin, "LOAN_APPLIED", $shortcodes, null, true, null, [$pdfPath]);
+
         if ($manager){
             notify($manager, 'LOAN_APPROVE', $shortcodes);
         }
@@ -317,5 +326,280 @@ class LoanController extends Controller
         $installments = $loan->installments()->paginate(getPaginate());
         $pageTitle    = "Installments";
         return view('admin.loan.installments', compact('pageTitle', 'installments', 'loan'));
+    }
+
+    /**
+     * Calculate accrued penalty data for a loan.
+     */
+    private function calculatePenalties(Loan $loan): array
+    {
+        $today = now();
+        $graceDays = (int) ($loan->delay_value ?? 0);
+        $dailyPenalty = (float) $loan->delay_charge;
+
+        // Unpaid installments past their due date
+        $missed = Installment::where('loan_id', $loan->id)
+            ->whereNull('given_at')
+            ->whereDate('installment_date', '<', $today)
+            ->orderBy('installment_date', 'asc')
+            ->get();
+
+        $totalPenalties = 0;
+        $penaltyLedger = [];
+
+        foreach ($missed as $inst) {
+            $dueDate     = \Carbon\Carbon::parse($inst->installment_date);
+            $daysOverdue = max(0, $dueDate->diffInDays($today) - $graceDays);
+            $accrued     = $daysOverdue * $dailyPenalty;
+            $totalPenalties += $accrued;
+
+            $penaltyLedger[] = [
+                'installment_date' => $dueDate,
+                'days_overdue'     => $daysOverdue,
+                'daily_penalty'    => $dailyPenalty,
+                'accrued'          => $accrued,
+            ];
+        }
+
+        return [
+            'missed_count'    => $missed->count(),
+            'daily_penalty'   => $dailyPenalty,
+            'total_penalties' => $totalPenalties,
+            'penalty_ledger'  => $penaltyLedger,
+            'grace_days'      => $graceDays,
+        ];
+    }
+
+    public function statementPdf($id)
+    {
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+        $data = $this->buildStatementData($loan);
+
+        ReportLog::create([
+            'loan_id'      => $loan->id,
+            'generated_by' => auth('admin')->id(),
+            'report_type'  => 'statement',
+            'reference'    => 'STMT-' . $loan->loan_number . '-' . now()->format('YmdHis'),
+        ]);
+
+        $html = view('admin.loan.pdf.statement', $data)->render();
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('chroot', base_path());
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Loan_Statement_' . $loan->loan_number . '_' . now()->format('Ymd_His') . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Generate Early Redemption Quote PDF
+     */
+    public function redemptionQuote($id)
+    {
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+
+        // Base figures
+        $loanAmount    = (float) $loan->amount;
+        $payableAmount = (float) ($loan->per_installment * $loan->total_installment);
+        $amountPaid    = (float) ($loan->per_installment * $loan->given_installment);
+        $outstanding   = $payableAmount - $amountPaid;
+
+        // Penalty engine
+        $penalties = $this->calculatePenalties($loan);
+        $totalPenalties = $penalties['total_penalties'];
+
+        // NEW FORMULA
+        $earlyRedemptionLoan    = $outstanding * 0.50;       // 50% of remaining loan balance
+        $discountedPenaltyPmt   = $totalPenalties * 0.75;    // 75% of accrued penalties
+        $totalSettlement        = $earlyRedemptionLoan + $discountedPenaltyPmt;
+
+        $loanDiscount    = $outstanding - $earlyRedemptionLoan;
+        $penaltyDiscount = $totalPenalties - $discountedPenaltyPmt;
+
+        $quote = RedemptionQuote::create([
+            'quote_reference'     => 'ERQ-' . strtoupper(Str::random(8)) . '-' . $loan->id,
+            'loan_id'             => $loan->id,
+            'generated_by'        => auth('admin')->id(),
+            'loan_amount'         => $loanAmount,
+            'amount_paid'         => $amountPaid,
+            'outstanding_balance' => $outstanding,
+            'calc_a_value'        => $earlyRedemptionLoan,
+            'calc_b_value'        => $discountedPenaltyPmt,
+            'settlement_amount'   => $totalSettlement,
+            'discount_applied'    => $loanDiscount + $penaltyDiscount,
+            'expires_at'          => now()->addDays(7),
+            'status'              => 1,
+            'notes'               => 'Total penalties: ' . number_format($totalPenalties, 2),
+        ]);
+
+        ReportLog::create([
+            'loan_id'      => $loan->id,
+            'generated_by' => auth('admin')->id(),
+            'report_type'  => 'redemption_quote',
+            'reference'    => $quote->quote_reference,
+        ]);
+
+        $data = [
+            'loan'                 => $loan,
+            'user'                 => $loan->user,
+            'quote'                => $quote,
+            'payableAmount'        => $payableAmount,
+            'amountPaid'           => $amountPaid,
+            'outstanding'          => $outstanding,
+            'earlyRedemptionLoan'  => $earlyRedemptionLoan,
+            'loanDiscount'         => $loanDiscount,
+            'totalPenalties'       => $totalPenalties,
+            'discountedPenaltyPmt' => $discountedPenaltyPmt,
+            'penaltyDiscount'      => $penaltyDiscount,
+            'totalSettlement'      => $totalSettlement,
+            'penalties'            => $penalties,
+            'generatedAt'          => now(),
+            'general'              => gs(),
+        ];
+
+        $html = view('admin.loan.pdf.redemption_quote', $data)->render();
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('chroot', base_path());
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Redemption_Quote_' . $loan->loan_number . '_' . $quote->quote_reference . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Payment History PDF (future-ready, working basic version)
+     */
+    public function paymentHistoryPdf($id)
+    {
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+        $data = $this->buildStatementData($loan);
+
+        ReportLog::create([
+            'loan_id'      => $loan->id,
+            'generated_by' => auth('admin')->id(),
+            'report_type'  => 'payment_history',
+            'reference'    => 'PH-' . $loan->loan_number . '-' . now()->format('YmdHis'),
+        ]);
+
+        $html = view('admin.loan.pdf.payment_history', $data)->render();
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('chroot', base_path());
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Payment_History_' . $loan->loan_number . '_' . now()->format('Ymd_His') . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Loan Agreement download (re-uses existing signed_agreement)
+     */
+    public function loanAgreementPdf($id)
+    {
+        $loan = Loan::findOrFail($id);
+
+        if (!$loan->signed_agreement) {
+            return back()->with('error', 'No signed agreement available for this loan.');
+        }
+
+        return redirect()->route('admin.loan.view.agreement', $loan->id);
+    }
+
+    /**
+     * Shared data builder for statement & history PDFs
+     */
+    private function buildStatementData(Loan $loan): array
+    {
+        $general = gs();
+
+        $payableAmount = (float) ($loan->per_installment * $loan->total_installment);
+        $amountPaid    = (float) ($loan->per_installment * $loan->given_installment);
+        $outstanding   = $payableAmount - $amountPaid;
+        $profit        = $payableAmount - (float) $loan->amount;
+
+        // Payment ledger (installments paid)
+        $installments = Installment::where('loan_id', $loan->id)
+            ->orderBy('installment_date', 'asc')
+            ->get();
+
+        $ledger = [];
+        $runningPaid = 0;
+        $instNumber = 0;
+
+        foreach ($installments as $inst) {
+            $instNumber++;
+            if (!$inst->given_at) continue; // only paid rows in ledger
+
+            $runningPaid += (float) $loan->per_installment;
+            $ledger[] = [
+                'payment_date'      => $inst->given_at,
+                'amount_paid'       => (float) $loan->per_installment,
+                'installment_no'    => $instNumber,
+                'remaining_balance' => $payableAmount - $runningPaid,
+            ];
+        }
+
+        // Next instalment date
+        $nextInstallment = Installment::where('loan_id', $loan->id)
+            ->whereNull('given_at')
+            ->orderBy('installment_date', 'asc')
+            ->first();
+
+        // Customer ID/Passport from KYC if available
+        $kyc = $loan->user->kyc_data ? json_decode(json_encode($loan->user->kyc_data), true) : [];
+        $idNumber = $kyc['id_number'] ?? $kyc['passport'] ?? $kyc['national_id'] ?? 'N/A';
+
+        $penalties = $this->calculatePenalties($loan);
+
+        return [
+            'loan'            => $loan,
+            'user'            => $loan->user,
+            'plan'            => $loan->plan,
+            'general'         => $general,
+            'payableAmount'   => $payableAmount,
+            'amountPaid'      => $amountPaid,
+            'outstanding'     => $outstanding,
+            'profit'          => $profit,
+            'ledger'          => $ledger,
+            'nextInstallment' => $nextInstallment,
+            'idNumber'        => $idNumber,
+            'generatedAt'     => now(),
+            'penalties'       => $penalties,
+        ];
     }
 }

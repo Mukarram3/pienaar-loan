@@ -7,8 +7,9 @@
                 <div class="alert__icon d-flex align-items-center text--success"><i class="fas fa-check"></i></div>
                 <p class="alert__message">
                     <span class="fw-bold">@lang('First Loan')</span><br>
-                    <small><i><span class="fw-bold">@lang('Congratulations!')</span> @lang('You\'ve made your first loan successfully. Go to') <a href="{{ route('user.loan.plans') }}" class="link-color">@lang('Loan List')</a>
-                            @lang('for see your next installment date at near.')</i></small>
+                    <small><i><span class="fw-bold">@lang('Congratulations!')</span> @lang('You\'ve made your first loan successfully.') </small>
+{{--                            <a href="{{ route('user.loan.plans') }}" class="link-color">@lang('Loan List')</a>--}}
+{{--                            @lang('for see your next installment date at near.')</i></small>--}}
                 </p>
             </div>
         @endif
@@ -186,8 +187,8 @@
                             <th>@lang('Plan Name')</th>
                             <th>@lang('Loan Amount')</th>
                             <th>@lang('Instalment')</th>
-                            <th>@lang('Installment Amount')</th>
-                            <th>@lang('Next Installment')</th>
+                            <th>@lang('Instalment Amount')</th>
+                            <th>@lang('Next Instalment')</th>
                         </tr>
                     </thead>
                     <tbody>

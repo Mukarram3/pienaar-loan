@@ -151,6 +151,13 @@
       <path value="$PROJECT_DIR$/core/vendor/symfony/clock" />
       <path value="$PROJECT_DIR$/core/vendor/symfony/finder" />
       <path value="$PROJECT_DIR$/core/vendor/tecnickcom/tcpdf" />
+      <path value="$PROJECT_DIR$/core/vendor/thecodingmachine/safe" />
+      <path value="$PROJECT_DIR$/core/vendor/sabberworm/php-css-parser" />
+      <path value="$PROJECT_DIR$/core/vendor/dompdf/php-svg-lib" />
+      <path value="$PROJECT_DIR$/core/vendor/masterminds/html5" />
+      <path value="$PROJECT_DIR$/core/vendor/dompdf/dompdf" />
+      <path value="$PROJECT_DIR$/core/vendor/dompdf/php-font-lib" />
+      <path value="$PROJECT_DIR$/core/vendor/barryvdh/laravel-dompdf" />
     </include_path>
   </component>
   <component name="PhpUnit">

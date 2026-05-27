@@ -85,6 +85,12 @@ Route::middleware('admin')->group(function () {
         Route::get('details/{id}', 'details')->name('details');
         Route::get('installments/{id}', 'installments')->name('installments');
         Route::get('/agreement/{id}','viewAgreement')->name('view.agreement');
+
+        Route::get('statement-pdf/{id}', 'statementPdf')->name('statement.pdf');
+        Route::get('redemption-quote/{id}', 'redemptionQuote')->name('redemption.quote');
+        Route::get('redemption-quote/{id}/download/{quoteRef}', 'redemptionQuoteDownload')->name('redemption.quote.download');
+        Route::get('payment-history-pdf/{id}', 'paymentHistoryPdf')->name('payment.history.pdf');
+        Route::get('loan-agreement-pdf/{id}', 'loanAgreementPdf')->name('agreement.pdf');
     });
 
     //============Staff================//

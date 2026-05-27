@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Console\Command\Command as CommandAlias;
 
 class LoanDelay extends Command
 {
@@ -34,15 +35,21 @@ class LoanDelay extends Command
 
         Log::info('cron job running');
 
+        $excludedLoanIds = [9,10,11,12,13,14,15,16,17,18];
         $installments = Installment::whereNull('given_at')
+            ->whereNotIn('loan_id', $excludedLoanIds)
             ->with(['loan.user', 'loan.plan'])
             ->orderBy('installment_date')
-            ->get()
-            ->groupBy('loan_id')
-            ->map(fn($group) => $group->first());
+            ->get();
 
         foreach ($installments as $installment) {
             $loan = $installment->loan;
+
+            if (!$loan || !$loan->plan) {
+                Log::warning("Skipping installment {$installment->id}: loan is null or plan missing");
+                continue; // Skip this installment and continue to the next
+            }
+
             $plan = $loan->plan;
             $user = $loan->user;
 
@@ -71,6 +78,7 @@ class LoanDelay extends Command
 
 //            Reminder - 3 days before due date
             if ($daysUntilDue == 3) {
+                Log::info('3 days before due');
                 $manager = Admin::find($loan->approved_by);
                 $shortCodes['manager_full_name'] = $manager->name;
 
@@ -78,7 +86,7 @@ class LoanDelay extends Command
                     notify($manager, 'LOAN_REMINDER_THREE_DAYS_DUE', $shortCodes);
                 }
                 else{
-                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_THREE_DAYS_DUE', $shortCodes);
+//                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_THREE_DAYS_DUE', $shortCodes);
                 }
                 notify($user, "LOAN_REMINDER_THREE_DAYS_DUE", $shortCodes);
                 continue;
@@ -86,24 +94,38 @@ class LoanDelay extends Command
 
             // 📅 2. On due date
             if ($daysUntilDue == 2) {
+                Log::info('2 days before due');
                 $manager = Admin::find($loan->approved_by);
-                $shortCodes['manager_full_name'] = $manager->name;
 
                 if ($manager){
+                    $shortCodes['manager_full_name'] = $manager->name;
                     notify($manager, 'LOAN_REMINDER_TWO_DAYS_DUE', $shortCodes);
                 }
                 else{
-                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_TWO_DAYS_DUE', $shortCodes);
+                    $shortCodes['manager_full_name'] = '';
+//                    notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_TWO_DAYS_DUE', $shortCodes);
                 }
+
                 notify($user, "LOAN_REMINDER_TWO_DAYS_DUE", $shortCodes);
                 continue;
             }
 
             // ⚠️ 3. After due date but still within interval (grace period)
             if ($daysUntilDue < 0 && $daysUntilGraceEnds >= 0) {
+                Log::info('loan is now due');
                 if (is_null($installment->missed_payment_reminder_sent_at)) {
                     $daysLeft = $daysUntilGraceEnds;
 
+                    $manager = Admin::find($loan->approved_by);
+
+                    if ($manager){
+                        $shortCodes['manager_full_name'] = $manager->name;
+                        notify($manager, "LOAN_REMINDER_INSTALMENT_INTERVAL", $shortCodes);
+                    }
+                    else{
+                        $shortCodes['manager_full_name'] = '';
+//                        notify(Admin::where('id','1')->first(), 'LOAN_REMINDER_INSTALMENT_INTERVAL', $shortCodes);
+                    }
                     notify($user, "LOAN_REMINDER_INSTALMENT_INTERVAL", $shortCodes);
 
                     $installment->missed_payment_reminder_sent_at = now();
@@ -115,30 +137,37 @@ class LoanDelay extends Command
             // 🚨 4. After grace period — apply delay charge
             if (now()->greaterThan($graceEndDate)) {
 
+                Log::info('charges applied');
                 $delayCharge = 0;
                 if ($plan->fixed_charge > 0) {
                     $delayCharge = $plan->fixed_charge;
                 } elseif (!empty($plan->percent_charge)) {
-                    $unpaid_loan_count = Installment::where('loan_id',$loan->id)->whereNull('given_at')->count();
-                    $remaining_loan_balance = $loan->per_installment * $unpaid_loan_count;
-                    $delayCharge = $remaining_loan_balance * ($plan->percent_charge / 100);
+//                    $unpaid_loan_count = Installment::where('loan_id',$loan->id)->whereNull('given_at')->count();
+//                    $remaining_loan_balance = $loan->per_installment * $unpaid_loan_count;
+                    $loan_balance = $loan->amount;
+                    $delayCharge = $loan_balance * ($plan->percent_charge / 100);
                 }
 
                 // Apply and save
-                $installment->delay_charge = ($installment->delay_charge ?? 0) + $delayCharge;
-                $installment->save();
+                if ($user) {
+                    $user->balance -= ($installment->delay_charge ?? 0) + $delayCharge;
+                    $user->save();
+                }
+//                $installment->delay_charge = ($installment->delay_charge ?? 0) + $delayCharge;
+//                $installment->save();
 
                 $shortCodes['late_fee'] = $delayCharge;
-                $shortCodes['balance'] = $user->balance;
+                $shortCodes['balance'] = $installment->delay_charge + $loan->per_installment;
 
                 $manager = Admin::find($loan->approved_by);
-                $shortCodes['manager_full_name'] = $manager->name;
 
                 if ($manager){
+                    $shortCodes['manager_full_name'] = $manager->name;
                     notify($manager, 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
                 }
                 else{
-                    notify(Admin::where('id','1')->first(), 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
+                    $shortCodes['manager_full_name'] = '';
+//                    notify(Admin::where('id','1')->first(), 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
                 }
                 notify($user, "CHARGES_APPLIED_ON_LOAN", $shortCodes);
 
