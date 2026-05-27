@@ -95,7 +95,7 @@
 
         <div class="col-xl-8 mb-30">
 
-            <div class="card  overflow-hidden box--shadow1">
+            <div class="card box--shadow1">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2">@lang('Loan Form Submitted by User')</h5>
                     <x-view-form-data :data="$loan->application_form"/>
