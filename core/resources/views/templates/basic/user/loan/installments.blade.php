@@ -5,6 +5,52 @@
             <p>@lang('Loan')</p>
             <div class="d-flex justify-content-between">
                 <h3>{{ __($pageTitle) }}</h3>
+                {{-- REPORTS & DOCUMENTS DROPDOWN --}}
+                <div class="dropdown d-inline-block bg-white">
+                    <button class="btn btn-outline--primary dropdown-toggle" type="button"
+                            id="reportsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-file-alt"></i> @lang('Reports & Documents')
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.loan.statement.pdf', $loan->id) }}" target="_blank">
+                                <i class="fas fa-file-pdf text--primary"></i> @lang('Statement of Loan Account')
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.loan.redemption.quote', $loan->id) }}" target="_blank">
+                                <i class="fas fa-file-invoice-dollar text--success"></i> @lang('Early Redemption Quote')
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ route('admin.loan.payment.history.pdf', $loan->id) }}"
+                               target="_blank">
+                                <i class="fas fa-history text--info"></i> @lang('Payment History')
+                            </a>
+                        </li>
+                        @if($loan->signed_agreement)
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{{ route('admin.loan.view.agreement', $loan->id) }}"
+                                   target="_blank">
+                                    <i class="fas fa-file-contract text--warning"></i> @lang('Loan Agreement')
+                                </a>
+                            </li>
+                        @else
+                            <li>
+                        <span class="dropdown-item disabled text-muted">
+                            <i class="fas fa-file-contract"></i> @lang('Loan Agreement') <small>(not uploaded)</small>
+                        </span>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
                 <a href="{{ route('user.loan.list') }}" class="btn btn--base btn--sm"><i class="las la-list-alt"></i>
                     @lang('My Loan List')</a>
             </div>
@@ -51,7 +97,7 @@
                             </div>
                             <div class="mb-2">
                                 <h4 class="text--base value"><sup class="top-0 fw-light me-1">{{ $loan->total_installment }}</h4>
-                                <p class="fw-bold caption">@lang('Total Instalment')</p>
+                                <p class="fw-bold caption">@lang('Total No of Instalments')</p>
                             </div>
                         </div>
                         <div class="d-flex flex-wrap justify-content-between align-items-center">
@@ -68,7 +114,7 @@
                             <div class="mb-2">
                                 <h4 class="text--base value"><sup class="top-0 fw-light me-1">{{ $loan->given_installment }}
                                 </h4>
-                                <p class="fw-bold caption">@lang('Given Instalment')</p>
+                                <p class="fw-bold caption">@lang('No of Instalments Paid')</p>
                             </div>
 
                         </div>

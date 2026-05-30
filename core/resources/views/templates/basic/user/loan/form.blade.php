@@ -31,7 +31,7 @@
                                         </li>
 
                                         <li>
-                                            <span class="caption">@lang('Total Instalment')</span>
+                                            <span class="caption">@lang('Total No of Instalments')</span>
                                             <span class="value">{{ $plan->total_installment }}</span>
                                         </li>
 

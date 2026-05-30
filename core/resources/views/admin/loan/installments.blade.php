@@ -30,7 +30,7 @@
 
                         <li class="list-group-item">
                             <span class="value">{{ $loan->total_installment }}</span>
-                            <span class="caption">@lang('Total Instalment')</span>
+                            <span class="caption">@lang('Total No of Instalments')</span>
                         </li>
 
                         <li class="list-group-item">
