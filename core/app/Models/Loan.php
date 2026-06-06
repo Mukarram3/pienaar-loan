@@ -120,6 +120,73 @@ class Loan extends Model
         return Attribute::make(get: fn () => $this->per_installment * $this->given_installment);
     }
 
+    public function documents()
+    {
+        return $this->hasMany(LoanDocument::class);
+    }
+
+    public function originalAgreement()
+    {
+        return $this->hasOne(LoanDocument::class)->where('document_type', 'original_agreement');
+    }
+
+    /**
+     * Override payable_amount to respect legacy override if set
+     */
+    public function legacyloanpayableAmount(): Attribute
+    {
+        return Attribute::make(get: function () {
+            if ($this->is_legacy && $this->total_repayable_override) {
+                return (float) $this->total_repayable_override;
+            }
+            return $this->per_installment * $this->total_installment;
+        });
+    }
+
+    /**
+     * Total outstanding incl. legacy late fees + other charges
+     */
+    public function totalOutstanding(): Attribute
+    {
+        return Attribute::make(get: function () {
+            $payable = (float) $this->payable_amount;
+            $paid    = (float) $this->paid_amount;
+            $loanBalance = max(0, $payable - $paid);
+            return $loanBalance + (float) $this->historical_late_fees + (float) $this->other_charges;
+        });
+    }
+
+    public function capitalProfitAllocation(): Attribute
+    {
+        return Attribute::make(get: function () {
+            if (!$this->is_legacy) {
+                return null;
+            }
+
+            $capitalRatio = $this->plan ? (float) $this->plan->capital_ratio : 0.5;
+            $profitRatio  = $this->plan ? (float) $this->plan->profit_ratio  : 0.5;
+
+            // Safety: ensure sum is sensible
+            if ($capitalRatio + $profitRatio == 0) {
+                $capitalRatio = $profitRatio = 0.5;
+            }
+
+            $payable = (float) $this->payable_amount;
+            $paid    = (float) $this->paid_amount;
+
+            return [
+                'total_capital'        => $payable * $capitalRatio,
+                'total_profit'         => $payable * $profitRatio,
+                'capital_repaid'       => $paid * $capitalRatio,
+                'profit_received'      => $paid * $profitRatio,
+                'capital_outstanding'  => max(0, ($payable - $paid) * $capitalRatio),
+                'profit_outstanding'   => max(0, ($payable - $paid) * $profitRatio),
+                'capital_ratio'        => $capitalRatio,
+                'profit_ratio'         => $profitRatio,
+            ];
+        });
+    }
+
     /* ========= Other Methods ========= */
 
     public function shortCodes()

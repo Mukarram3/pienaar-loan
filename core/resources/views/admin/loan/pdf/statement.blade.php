@@ -44,6 +44,14 @@
 
 <div class="title">Statement of Loan Account</div>
 
+@if($isLegacy ?? false)
+    <div style="background:#fff3cd; padding:8px 12px; border-left:4px solid #f0ad4e; margin-bottom:14px; font-size:10px;">
+        <strong>LEGACY LOAN</strong> — Imported from historical loan book.
+        @if($originalAgreementRef) Original Agreement Ref: <strong>{{ $originalAgreementRef }}</strong> @endif
+        @if($originalLoanDate) | Loan Date: <strong>{{ \Carbon\Carbon::parse($originalLoanDate)->format('d M Y') }}</strong> @endif
+    </div>
+@endif
+
 {{-- CUSTOMER DETAILS --}}
 <div class="section">
     <div class="title" style="font-size:12px;">Customer Details</div>
@@ -122,6 +130,53 @@
     </table>
 </div>
 
+{{-- CAPITAL / PROFIT ALLOCATION (Legacy Loans Only) --}}
+@if($isLegacy && $capitalProfit)
+    <div class="section">
+        <div class="title" style="font-size:12px;">Capital &amp; Profit Allocation</div>
+        <p style="font-size:9px; color:#777; margin: 0 0 8px 0; font-style:italic;">
+            Each instalment is allocated {{ number_format($capitalProfit['capital_ratio'] * 100, 0) }}% Capital
+            and {{ number_format($capitalProfit['profit_ratio'] * 100, 0) }}% Profit.
+        </p>
+
+        <table class="grid" style="margin-bottom: 8px;">
+            <tr style="background:#f7f9fc;">
+                <td colspan="2" style="font-weight:bold; color:#1a4d8c; padding: 8px;">Capital Position</td>
+            </tr>
+            <tr>
+                <td class="label">Total Capital</td>
+                <td class="amount">{{ showAmount($capitalProfit['total_capital']) }}</td>
+            </tr>
+            <tr>
+                <td class="label">Capital Repaid</td>
+                <td class="amount" style="color:#1e7e34;">{{ showAmount($capitalProfit['capital_repaid']) }}</td>
+            </tr>
+            <tr>
+                <td class="label"><strong>Capital Outstanding</strong></td>
+                <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($capitalProfit['capital_outstanding']) }}</strong></td>
+            </tr>
+        </table>
+
+        <table class="grid">
+            <tr style="background:#f7f9fc;">
+                <td colspan="2" style="font-weight:bold; color:#1a4d8c; padding: 8px;">Profit Position</td>
+            </tr>
+            <tr>
+                <td class="label">Total Profit</td>
+                <td class="amount">{{ showAmount($capitalProfit['total_profit']) }}</td>
+            </tr>
+            <tr>
+                <td class="label">Profit Received</td>
+                <td class="amount" style="color:#1e7e34;">{{ showAmount($capitalProfit['profit_received']) }}</td>
+            </tr>
+            <tr>
+                <td class="label"><strong>Profit Outstanding</strong></td>
+                <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($capitalProfit['profit_outstanding']) }}</strong></td>
+            </tr>
+        </table>
+    </div>
+@endif
+
 {{-- LATE FEES & PENALTIES --}}
 <div class="section">
     <div class="title" style="font-size:12px;">Late Fees &amp; Penalties</div>
@@ -142,6 +197,20 @@
             <td class="label" style="color:#c0392b;"><strong>Total Penalties Accrued</strong></td>
             <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($penalties['total_penalties']) }}</strong></td>
         </tr>
+        @if($isLegacy ?? false)
+            <tr>
+                <td class="label">Historical Late Fees Imported</td>
+                <td class="amount">{{ showAmount($historicalLateFees ?? 0) }}</td>
+            </tr>
+            <tr>
+                <td class="label">Other Charges / Legal Fees</td>
+                <td class="amount">{{ showAmount($otherCharges ?? 0) }}</td>
+            </tr>
+            <tr>
+                <td class="label" style="color:#c0392b;"><strong>Total Outstanding (incl. all charges)</strong></td>
+                <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($totalOutstandingAll ?? 0) }}</strong></td>
+            </tr>
+        @endif
     </table>
     <p style="font-size:9px; color:#777; margin-top:6px; font-style:italic;">
         Penalties are tracked separately from the loan balance and are not included in the Current Outstanding Balance above.

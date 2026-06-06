@@ -31,7 +31,18 @@
         "icon": "las la-hand-holding-usd",
         "counters": ["pendingLoanCount", "dueLoanCount"],
         "menu_active": "admin.loan*",
-        "submenu": [{
+        "submenu": [
+            {
+                "keyword": ["Import", "Legacy"],
+                "title": "Import Legacy Loan",
+                "route_name": "admin.loan.legacy.create",
+                "menu_active": "admin.loan.legacy.create",
+                "counter": "legacyLoanCount",
+                "params":[{
+                    "user_id":""
+                }]
+            },
+            {
                 "keyword": ["Pending", "Waiting Loans", "Loans"],
                 "title": "Pending Loans",
                 "route_name": "admin.loan.pending",

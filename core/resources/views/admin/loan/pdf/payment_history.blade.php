@@ -71,6 +71,29 @@
             </td>
         </tr>
     </table>
+
+    @if($isLegacy && $capitalProfit)
+        <table class="summary-grid" style="margin-top:10px;">
+            <tr>
+                <td>
+                    <div class="lbl">Capital Repaid</div>
+                    <div class="val" style="color:#1e7e34;">{{ showAmount($capitalProfit['capital_repaid']) }}</div>
+                </td>
+                <td>
+                    <div class="lbl">Capital Outstanding</div>
+                    <div class="val" style="color:#c0392b;">{{ showAmount($capitalProfit['capital_outstanding']) }}</div>
+                </td>
+                <td>
+                    <div class="lbl">Profit Received</div>
+                    <div class="val" style="color:#1e7e34;">{{ showAmount($capitalProfit['profit_received']) }}</div>
+                </td>
+                <td>
+                    <div class="lbl">Profit Outstanding</div>
+                    <div class="val" style="color:#c0392b;">{{ showAmount($capitalProfit['profit_outstanding']) }}</div>
+                </td>
+            </tr>
+        </table>
+    @endif
 </div>
 
 {{-- CUSTOMER MINI --}}

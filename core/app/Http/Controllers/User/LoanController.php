@@ -306,49 +306,53 @@ class LoanController extends Controller {
         $loan = Loan::find($installment->loan_id);
 
         $total_installments = Installment::where('loan_id', $loan->id)->count();
+
+        $installment->given_at = today();
+        $installment->save();
+
         $paid_installments = Installment::where('loan_id', $loan->id)
             ->whereNotNull('given_at')
             ->count();
-        $current_installment_number = $paid_installments + 1;
-
-            $installment->given_at = today();
-            $installment->save();
+        $current_installment_number = $paid_installments - 1;
 
         $loan->given_installment = $current_installment_number;
-        $loan->save();
 
-            $user = auth()->user();
-            $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
-            $user->save();
+        $user = auth()->user();
+        $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
+        $user->save();
 
-            $shortCodes = $loan->shortCodes();
-            $shortCodes['due_date'] = showDateTime($installment->installment_date, 'd M Y');
-            $shortCodes['amount'] = showAmount($loan->per_installment + $installment->delay_charge,currencyFormat:false);
-            $shortCodes['balance'] = showAmount(auth()->user()->balance,currencyFormat:false);
-            $shortCodes['current_installment'] = $current_installment_number;
-            $shortCodes['total_installment'] = $total_installments;
+        $shortCodes = $loan->shortCodes();
+        $shortCodes['due_date'] = showDateTime($installment->installment_date, 'd M Y');
+        $shortCodes['amount'] = showAmount($loan->per_installment + $installment->delay_charge,currencyFormat:false);
+        $shortCodes['balance'] = showAmount(auth()->user()->balance,currencyFormat:false);
+        $shortCodes['current_installment'] = $current_installment_number;
+        $shortCodes['total_installment'] = $total_installments;
 
             notify($user, 'Loan_Repayment_Received', $shortCodes);
-            $loan_manager = Admin::find($loan->approved_by);
-            if ($loan_manager){
-                notify($loan_manager, 'Loan_Repayment_Received', $shortCodes);
-            }
-            else{
-                notify(Admin::where('id','1')->first(), 'Loan_Repayment_Received', $shortCodes);
-            }
+        $loan_manager = Admin::find($loan->approved_by);
+        if ($loan_manager){
+            notify($loan_manager, 'Loan_Repayment_Received', $shortCodes);
+        }
+        else{
+            notify(Admin::where('id','1')->first(), 'Loan_Repayment_Received', $shortCodes);
+        }
 
-            $allInstallments      = Installment::where('loan_id', $installment->loan_id)->count();
-            $paidInstallments     = Installment::where('loan_id', $installment->loan_id)
-                ->whereNotNull('given_at')
-                ->count();
+        $allInstallments      = Installment::where('loan_id', $installment->loan_id)->count();
+        $paidInstallments     = Installment::where('loan_id', $installment->loan_id)
+            ->whereNotNull('given_at')
+            ->count();
 
-            if ($allInstallments > 0 && $allInstallments === $paidInstallments) {
+        if ($allInstallments > 0 && $allInstallments === $paidInstallments) {
                 notify($user, 'Loan_Fully_Repaid', [
                     'loan_number' => $loan->loan_number,
                 ]);
-            }
 
-            $notify[] = ['success', 'Installment Paid successfully'];
-            return back()->withNotify($notify);
+            $loan->status = Status::LOAN_PAID;
+        }
+
+        $loan->save();
+
+        $notify[] = ['success', 'Installment Paid successfully'];
+        return back()->withNotify($notify);
     }
 }

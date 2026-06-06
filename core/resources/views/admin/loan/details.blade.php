@@ -2,8 +2,7 @@
 @section('panel')
     <div class="row gy-4">
         <div class="col-xl-4 mb-30">
-            <div class="card  overflow-hidden box--shadow1">
-
+            <div class="card overflow-hidden box--shadow1">
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
@@ -22,7 +21,7 @@
                         </li>
 
                         <li class="list-group-item">
-                            <span class="fw-bold">@lang('Amount') </span>
+                            <span class="fw-bold">@lang('Amount')</span>
                             <span class="fw-bold text--warning">{{ showAmount($loan->amount) }}</span>
                         </li>
 
@@ -62,12 +61,12 @@
                     </ul>
 
                     @if ($loan->status == Status::LOAN_REJECTED && $loan->admin_feedback)
-                        <h6 class="mt-3"><i class="fa fa-info-circle text--danger" aria-hidden="true"></i>
-                            @lang('Reason of Rejection')</h6>
+                        <h6 class="mt-3">
+                            <i class="fa fa-info-circle text--danger" aria-hidden="true"></i>
+                            @lang('Reason of Rejection')
+                        </h6>
                         <p class="mt-2">{{ $loan->admin_feedback }}</p>
-
                     @else
-
                         <form action="{{ route('admin.loan.assign') }}" method="POST" class="mt-2">
                             @csrf
                             <input type="hidden" name="id" value="{{ $loan->id }}">
@@ -75,32 +74,29 @@
                                 <label>@lang('Assign Loan')</label>
                                 <select name="admin_id" class="form-control" required>
                                     <option value="" disabled selected>@lang('Select One')</option>
-                                    @foreach (\App\Models\Admin::where('status',1)->where('id', '!=', 1)->get() as $admin)
-                                        <option
-                                            value="{{ $admin->id }}" {{ isset($loan->approved_by) && $loan->approved_by == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                                    @foreach (\App\Models\Admin::where('status', 1)->where('id', '!=', 1)->get() as $admin)
+                                        <option value="{{ $admin->id }}" {{ isset($loan->approved_by) && $loan->approved_by == $admin->id ? 'selected' : '' }}>
+                                            {{ $admin->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')</button>
                             </div>
-
                         </form>
-
                     @endif
-
                 </div>
             </div>
         </div>
 
         <div class="col-xl-8 mb-30">
-
             <div class="card box--shadow1">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2">@lang('Loan Form Submitted by User')</h5>
                     <x-view-form-data :data="$loan->application_form"/>
 
-                    @if( ($loan->status == Status::LOAN_APPROVED || $loan->status == Status::LOAN_RUNNING) && $loan->signed_agreement)
+                    @if (($loan->status == Status::LOAN_APPROVED || $loan->status == Status::LOAN_RUNNING) && $loan->signed_agreement)
                         <h5 class="card-title border-bottom pb-2">@lang('Loan Agreement Submitted by User')</h5>
                         <a href="{{ route('admin.loan.view.agreement', $loan->id) }}"
                            class="btn btn-primary"
@@ -112,7 +108,7 @@
                     @endif
 
                     <div class="row mt-4">
-                        <div class="col-md-12">
+                        <div class="col-md-12 d-flex flex-wrap gap-2">
                             @if ($loan->status == Status::LOAN_PENDING)
                                 <button class="btn btn-outline--warning confirmationBtn"
                                         data-action="{{ route('admin.loan.review', $loan->id) }}"
@@ -120,13 +116,15 @@
                                     <i class="fas la-check"></i> @lang('Review')
                                 </button>
                             @endif
-                            @if($loan->status == Status::LOAN_IN_REVIEW)
+
+                            @if ($loan->status == Status::LOAN_IN_REVIEW)
                                 <button class="btn btn-outline--success confirmationBtn"
                                         data-action="{{ route('admin.loan.approve', $loan->id) }}"
                                         data-question="@lang('Are you sure to approve this loan?')">
                                     <i class="fas la-check"></i> @lang('Approve')
                                 </button>
                             @endif
+
                             @if ($loan->status == Status::LOAN_APPROVED)
                                 <button class="btn btn-outline--warning confirmationBtn"
                                         data-action="{{ route('admin.loan.release_funds', $loan->id) }}"
@@ -134,8 +132,9 @@
                                     <i class="fas la-check"></i> @lang('Release Funds')
                                 </button>
                             @endif
-                            @if($loan->status != STATUS::LOAN_RUNNING)
-                                <button class="btn btn-outline--danger ms-1 rejectBtn"
+
+                            @if ($loan->status != Status::LOAN_RUNNING)
+                                <button class="btn btn-outline--danger rejectBtn"
                                         data-action="{{ route('admin.loan.reject', $loan->id) }}">
                                     <i class="fas fa-ban"></i> @lang('Reject')
                                 </button>
@@ -150,48 +149,182 @@
                                 <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
                                     <li>
                                         <a class="dropdown-item"
-                                           href="{{ route('admin.loan.statement.pdf', $loan->id) }}" target="_blank">
-                                            <i class="fas fa-file-pdf text--primary"></i> @lang('Statement of Loan Account')
+                                           href="{{ route('admin.loan.statement.pdf', $loan->id) }}"
+                                           target="_blank">
+                                            <i class="fas fa-file-pdf text--primary"></i>
+                                            @lang('Statement of Loan Account')
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item"
-                                           href="{{ route('admin.loan.redemption.quote', $loan->id) }}" target="_blank">
-                                            <i class="fas fa-file-invoice-dollar text--success"></i> @lang('Early Redemption Quote')
+                                           href="{{ route('admin.loan.redemption.quote', $loan->id) }}"
+                                           target="_blank">
+                                            <i class="fas fa-file-invoice-dollar text--success"></i>
+                                            @lang('Early Redemption Quote')
                                         </a>
                                     </li>
+
+                                    {{-- SETTLEMENT CERTIFICATE — only if loan fully paid --}}
+                                    @if ($loan->status == Status::LOAN_PAID)
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{{ route('admin.loan.settlement.certificate', $loan->id) }}"
+                                               target="_blank">
+                                                <i class="fas fa-certificate text--warning"></i>
+                                                @lang('Settlement Certificate')
+                                                <span class="badge bg-success ms-1" style="font-size:9px;">CLOSED</span>
+                                            </a>
+                                        </li>
+                                    @endif
+
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>
+
                                     <li>
                                         <a class="dropdown-item"
                                            href="{{ route('admin.loan.payment.history.pdf', $loan->id) }}"
                                            target="_blank">
-                                            <i class="fas fa-history text--info"></i> @lang('Payment History')
+                                            <i class="fas fa-history text--info"></i>
+                                            @lang('Payment History')
                                         </a>
                                     </li>
-                                    @if($loan->signed_agreement)
+
+                                    @if ($loan->signed_agreement)
                                         <li>
                                             <a class="dropdown-item"
                                                href="{{ route('admin.loan.view.agreement', $loan->id) }}"
                                                target="_blank">
-                                                <i class="fas fa-file-contract text--warning"></i> @lang('Loan Agreement')
+                                                <i class="fas fa-file-contract text--warning"></i>
+                                                @lang('Loan Agreement')
                                             </a>
                                         </li>
                                     @else
                                         <li>
-                        <span class="dropdown-item disabled text-muted">
-                            <i class="fas fa-file-contract"></i> @lang('Loan Agreement') <small>(not uploaded)</small>
-                        </span>
+                                            <span class="dropdown-item disabled text-muted">
+                                                <i class="fas fa-file-contract"></i>
+                                                @lang('Loan Agreement') <small>(not uploaded)</small>
+                                            </span>
                                         </li>
                                     @endif
                                 </ul>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- LOAN DOCUMENTS (full width) --}}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card box--shadow1">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
+                        <h5 class="card-title mb-0">
+                            @lang('Loan Documents')
+                            @if ($loan->is_legacy)
+                                <span class="badge bg-info ms-1" style="font-size:9px;">LEGACY</span>
+                            @endif
+                        </h5>
+                        <button type="button" class="btn btn-sm btn--primary"
+                                data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+                            <i class="fas fa-upload"></i> @lang('Upload')
+                        </button>
+                    </div>
+
+                    @if ($loan->documents->count())
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                <tr>
+                                    <th>@lang('Type')</th>
+                                    <th>@lang('Filename')</th>
+                                    <th>@lang('Size')</th>
+                                    <th>@lang('Uploaded')</th>
+                                    <th class="text-end">@lang('Actions')</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                @foreach ($loan->documents as $doc)
+                                    <tr>
+                                        <td>
+                                            @if ($doc->document_type == 'original_agreement')
+                                                <span class="badge bg-primary">Original Agreement</span>
+                                            @elseif ($doc->document_type == 'supporting')
+                                                <span class="badge bg-secondary">Supporting</span>
+                                            @else
+                                                <span class="badge bg-light text-dark">Other</span>
+                                            @endif
+                                        </td>
+                                        <td style="word-break:break-all;">{{ $doc->original_filename }}</td>
+                                        <td>{{ $doc->file_size_formatted }}</td>
+                                        <td>{{ $doc->created_at->format('d M Y') }}</td>
+                                        <td class="text-end text-nowrap">
+                                            <a href="{{ route('admin.loan.documents.download', $doc->id) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <form action="{{ route('admin.loan.documents.delete', $doc->id) }}"
+                                                  method="POST" class="d-inline"
+                                                  onsubmit="return confirm('Delete this document?')">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">@lang('No documents uploaded yet.')</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Upload Modal --}}
+    <div class="modal fade" id="uploadDocModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.loan.documents.upload', $loan->id) }}"
+                  method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@lang('Upload Document')</h5>
+                        <button type="button" class="close" data-bs-dismiss="modal">
+                            <i class="las la-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>@lang('Document Type')</label>
+                            <select name="document_type" class="form-control" required>
+                                <option value="original_agreement">Original Loan Agreement</option>
+                                <option value="supporting">Supporting Document</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>@lang('File') <span class="text--danger">*</span></label>
+                            <input type="file" name="document" class="form-control" required>
+                            <small class="text-muted">Max 10MB.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>@lang('Notes')</label>
+                            <textarea name="notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn--primary w-100">@lang('Upload')</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -211,8 +344,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>@lang('Reason of Rejection')</label>
-                            <textarea name="reason" maxlength="255" class="form-control" rows="5"
-                                      required>{{ old('message') }}</textarea>
+                            <textarea name="reason" maxlength="255" class="form-control" rows="5" required>{{ old('message') }}</textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -239,7 +371,6 @@
     <script>
         (function ($) {
             "use strict";
-
             $('.rejectBtn').on('click', function () {
                 var modal = $('#rejectModal');
                 modal.find('form')[0].action = $(this).data('action');

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Installment;
 use App\Models\Loan;
+use App\Models\LoanSettlement;
 use App\Models\RedemptionQuote;
 use App\Models\ReportLog;
 use App\Models\Transaction;
@@ -72,7 +73,7 @@ class LoanController extends Controller
 
     public function details($id)
     {
-        $loan      = Loan::where('id', $id)->with('plan', 'user')->firstOrFail();
+        $loan      = Loan::where('id', $id)->with('plan', 'user', 'documents')->firstOrFail();
         $pageTitle = 'Loan Details';
         return view('admin.loan.details', compact('pageTitle', 'loan'));
     }
@@ -600,6 +601,88 @@ class LoanController extends Controller
             'idNumber'        => $idNumber,
             'generatedAt'     => now(),
             'penalties'       => $penalties,
+            'isLegacy'             => (bool) $loan->is_legacy,
+            'originalLoanDate'     => $loan->original_loan_date,
+            'originalAgreementRef' => $loan->original_agreement_ref,
+            'historicalLateFees'   => (float) $loan->historical_late_fees,
+            'otherCharges'         => (float) $loan->other_charges,
+            'totalOutstandingAll'  => (float) $loan->total_outstanding,
+            'capitalProfit'        => $loan->capital_profit_allocation,
         ];
+    }
+
+    public function settlementCertificate($id)
+    {
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+
+        // Safety: only generate for fully paid loans
+        if ($loan->status != Status::LOAN_PAID) {
+            return back()->with('error', 'Settlement certificate is only available for fully settled loans.');
+        }
+
+        // Get-or-create settlement record (stable ref across regenerations)
+        $settlement = LoanSettlement::firstOrCreate(
+            ['loan_id' => $loan->id],
+            [
+                'settlement_reference'   => 'SET-' . strtoupper(\Illuminate\Support\Str::random(8)) . '-' . $loan->id,
+                'certificate_reference'  => 'CERT-' . strtoupper(\Illuminate\Support\Str::random(8)) . '-' . $loan->id,
+                'issued_by'              => auth('admin')->id(),
+                'original_loan_amount'   => (float) $loan->amount,
+                'total_repaid'           => (float) ($loan->per_installment * $loan->total_installment),
+                'final_settlement_date'  => $loan->updated_at,
+                'closure_effective_date' => now(),
+                'settlement_type'        => 1,
+            ]
+        );
+
+        ReportLog::create([
+            'loan_id'      => $loan->id,
+            'generated_by' => auth('admin')->id(),
+            'report_type'  => 'settlement_certificate',
+            'reference'    => $settlement->certificate_reference,
+        ]);
+
+        // KYC ID/Passport extraction (same logic as statement)
+        $kyc = $loan->user->kyc_data ? json_decode(json_encode($loan->user->kyc_data), true) : [];
+        $idNumber = 'N/A';
+        if (is_array($kyc)) {
+            foreach ($kyc as $field) {
+                $name = strtolower($field['name'] ?? '');
+                if (str_contains($name, 'id') || str_contains($name, 'passport') || str_contains($name, 'national')) {
+                    $idNumber = $field['value'] ?? 'N/A';
+                    break;
+                }
+            }
+        }
+
+        $data = [
+            'loan'        => $loan,
+            'user'        => $loan->user,
+            'plan'        => $loan->plan,
+            'settlement'  => $settlement,
+            'idNumber'    => $idNumber,
+            'generatedAt' => now(),
+            'general'     => gs(),
+        ];
+
+        $html = view('admin.loan.pdf.settlement_certificate', $data)->render();
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('chroot', base_path());
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Settlement_Certificate_' . $loan->loan_number . '_' . $settlement->certificate_reference . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 }

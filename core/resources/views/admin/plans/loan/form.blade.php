@@ -46,7 +46,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Category')</label>
                                     <select name="category_id" class="form-control select2" data-minimum-results-for-search="-1"
@@ -61,7 +61,41 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Plan Type') <span class="text--danger">*</span></label>
+                                    <select name="is_legacy" id="is_legacy_toggle" class="form-control" required>
+                                        <option value="0" {{ old('is_legacy', $plan->is_legacy ?? 0) == 0 ? 'selected' : '' }}>Standard RapidLab Plan</option>
+                                        <option value="1" {{ old('is_legacy', $plan->is_legacy ?? 0) == 1 ? 'selected' : '' }}>Legacy Fixed Term Loan</option>
+                                    </select>
+                                    <small class="text-muted">@lang('Legacy plans do not recalculate using weekly percentage charges.')</small>
+                                </div>
+                            </div>
+
+                            {{-- Capital / Profit allocation — only relevant for legacy plans --}}
+                            <div id="legacy_allocation_block" class="row" style="display: {{ old('is_legacy', $plan->is_legacy ?? 0) == 1 ? 'flex' : 'none' }};">
+                                <div class="col-md-6 form-group">
+                                    <label>@lang('Capital Allocation (%)') <span class="text--danger">*</span></label>
+                                    <input type="number" step="0.01" min="0" max="100" name="capital_ratio_pct" id="capital_ratio_pct"
+                                           class="form-control"
+                                           value="{{ old('capital_ratio_pct', isset($plan) ? number_format($plan->capital_ratio * 100, 2) : 50) }}">
+                                    <small class="text-muted">@lang('Portion of each instalment allocated to capital. Default 50%.')</small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>@lang('Profit Allocation (%)') <span class="text--danger">*</span></label>
+                                    <input type="number" step="0.01" min="0" max="100" name="profit_ratio_pct" id="profit_ratio_pct"
+                                           class="form-control"
+                                           value="{{ old('profit_ratio_pct', isset($plan) ? number_format($plan->profit_ratio * 100, 2) : 50) }}">
+                                    <small class="text-muted">@lang('Portion of each instalment allocated to profit. Should sum to 100% with capital.')</small>
+                                </div>
+                                <div class="col-12">
+                                    <div id="allocation_warning" class="alert alert-warning py-2" style="display:none; font-size:12px;">
+                                        <i class="fas fa-exclamation-triangle"></i> Capital + Profit should sum to 100%.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Per Instalment')</label>
                                     <div class="input-group">
@@ -73,7 +107,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Installment Interval')</label>
                                     <div class="input-group">
@@ -85,7 +119,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Total Installments')</label>
                                     <div class="input-group">
@@ -97,7 +131,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Profit in Percentage')</label>
                                     <div class="input-group">
@@ -108,7 +142,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Application Fixed Charge')</label>
                                     <div class="input-group">
@@ -120,7 +154,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Application Percent Charge')</label>
                                     <div class="input-group">
@@ -132,7 +166,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Featured')</label>
                                     <select name="is_featured" class="form-control select2" data-minimum-results-for-search="-1"
@@ -243,6 +277,28 @@
                 }
             }
             displayProfit();
+
+            const toggle = document.getElementById('is_legacy_toggle');
+            const block  = document.getElementById('legacy_allocation_block');
+            const capInp = document.getElementById('capital_ratio_pct');
+            const profInp = document.getElementById('profit_ratio_pct');
+            const warn   = document.getElementById('allocation_warning');
+
+            if (!toggle) return;
+
+            toggle.addEventListener('change', function () {
+                block.style.display = (this.value === '1') ? 'flex' : 'none';
+            });
+
+            function checkSum() {
+                const total = parseFloat(capInp.value || 0) + parseFloat(profInp.value || 0);
+                warn.style.display = Math.abs(total - 100) > 0.01 ? 'block' : 'none';
+            }
+            if (capInp && profInp) {
+                capInp.addEventListener('input', checkSum);
+                profInp.addEventListener('input', checkSum);
+            }
+
         })(jQuery);
     </script>
 @endpush

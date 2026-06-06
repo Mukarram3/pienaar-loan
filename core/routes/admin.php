@@ -91,6 +91,22 @@ Route::middleware('admin')->group(function () {
         Route::get('redemption-quote/{id}/download/{quoteRef}', 'redemptionQuoteDownload')->name('redemption.quote.download');
         Route::get('payment-history-pdf/{id}', 'paymentHistoryPdf')->name('payment.history.pdf');
         Route::get('loan-agreement-pdf/{id}', 'loanAgreementPdf')->name('agreement.pdf');
+
+        Route::get('settlement-certificate/{id}', 'settlementCertificate')->name('settlement.certificate');
+
+        Route::name('legacy.')->prefix('legacy')->controller('LegacyLoanController')->group(function () {
+            Route::get('create', 'create')->name('create');
+            Route::post('store', 'store')->name('store');
+            Route::get('edit/{id}', 'edit')->name('edit');
+            Route::post('update/{id}', 'update')->name('update');
+        });
+
+        Route::name('documents.')->prefix('documents')->controller('LoanDocumentController')->group(function () {
+            Route::post('upload/{loan_id}', 'upload')->name('upload');
+            Route::get('download/{id}', 'download')->name('download');
+            Route::post('delete/{id}', 'delete')->name('delete');
+        });
+
     });
 
     //============Staff================//

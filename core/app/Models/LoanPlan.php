@@ -32,4 +32,14 @@ class LoanPlan extends Model
     {
         return ($this->total_installment * $this->per_installment) - 100;
     }
+
+    public function scopeLegacy($query)
+    {
+        return $query->where('is_legacy', 1);
+    }
+
+    public function scopeStandard($query)
+    {
+        return $query->where('is_legacy', 0);
+    }
 }

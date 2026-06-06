@@ -36,7 +36,7 @@ class LoanPlanController extends Controller
     }
 
     public function store(Request $request, $id = 0)
-    { 
+    {
         $this->validation($request);
 
         $formProcessor = new FormProcessor();
@@ -67,6 +67,27 @@ class LoanPlanController extends Controller
         $plan->is_featured                = $request->is_featured;
         $plan->application_fixed_charge   = $request->application_fixed_charge;
         $plan->application_percent_charge = $request->application_percent_charge;
+        $plan->is_legacy = $request->boolean('is_legacy');
+
+        if ($plan->is_legacy) {
+            $capPct  = (float) ($request->capital_ratio_pct ?? 50);
+            $profPct = (float) ($request->profit_ratio_pct ?? 50);
+
+            // Normalize if doesn't sum to 100
+            $total = $capPct + $profPct;
+            if ($total > 0 && abs($total - 100) > 0.01) {
+                $capPct  = ($capPct / $total) * 100;
+                $profPct = 100 - $capPct;
+            }
+
+            $plan->capital_ratio = $capPct / 100;
+            $plan->profit_ratio  = $profPct / 100;
+        } else {
+            // Defaults for standard plans (not used in reports but kept consistent)
+            $plan->capital_ratio = 0.5;
+            $plan->profit_ratio  = 0.5;
+        }
+
         $plan->save();
 
         $notify[] = ['success', $message];
@@ -99,6 +120,9 @@ class LoanPlanController extends Controller
             'is_featured'                => 'nullable|in:0,1',
             'application_fixed_charge'   => 'required|numeric',
             'application_percent_charge' => 'required|numeric',
+            'is_legacy'         => 'required|in:0,1',
+            'capital_ratio_pct' => 'nullable|numeric|min:0|max:100',
+            'profit_ratio_pct'  => 'nullable|numeric|min:0|max:100',
         ];
 
         $formProcessor       = new FormProcessor();
