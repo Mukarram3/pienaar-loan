@@ -328,7 +328,7 @@ class LoanController extends Controller {
         $shortCodes['current_installment'] = $current_installment_number;
         $shortCodes['total_installment'] = $total_installments;
 
-            notify($user, 'Loan_Repayment_Received', $shortCodes);
+        notify($user, 'Loan_Repayment_Received', $shortCodes);
         $loan_manager = Admin::find($loan->approved_by);
         if ($loan_manager){
             notify($loan_manager, 'Loan_Repayment_Received', $shortCodes);

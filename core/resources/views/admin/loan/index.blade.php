@@ -52,7 +52,7 @@
 
                                         <td>
                                             <span>@lang('Total') : {{ $loan->total_installment }}</span>
-                                            <span class="d-block text--info">@lang('Given') :
+                                            <span class="d-block text--info">@lang('Paid') :
                                                 {{ $loan->given_installment }}</span>
                                         </td>
 
