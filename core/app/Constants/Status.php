@@ -55,4 +55,31 @@ class Status{
     const WITHDRAW_PENDING = 2;
     const WITHDRAW_CANCEL  = 3;
 
+    // Loan Lifecycle Stages
+    const LIFECYCLE_ACTIVE              = 1;
+    const LIFECYCLE_REDEMPTION_OFFERED  = 2;
+    const LIFECYCLE_REDEMPTION_ACCEPTED = 3;
+    const LIFECYCLE_SETTLED             = 4;
+    const LIFECYCLE_CLOSED              = 5;
+    const LIFECYCLE_SECURITY_RELEASED   = 6;
+
+// Arrears State
+    const ARREARS_ACTIVE            = 1;
+    const ARREARS_IN_ARREARS        = 2;
+    const ARREARS_DEFAULTED         = 3;
+    const ARREARS_LEGAL_COLLECTIONS = 4;
+
+// Redemption Quote statuses
+    const QUOTE_ACTIVE   = 1;
+    const QUOTE_EXPIRED  = 2;
+    const QUOTE_ACCEPTED = 3;
+    const QUOTE_REJECTED = 4;
+    const QUOTE_SETTLED  = 5;
+    const QUOTE_VOID     = 6;
+
+// Settlement Payment statuses
+    const PAYMENT_FULL  = 1;
+    const PAYMENT_SHORT = 2;
+    const PAYMENT_REJECTED_INSUFFICIENT = 3;
+
 }

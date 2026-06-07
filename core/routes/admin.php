@@ -107,6 +107,14 @@ Route::middleware('admin')->group(function () {
             Route::post('delete/{id}', 'delete')->name('delete');
         });
 
+        // Lifecycle workflow
+        Route::post('quote/accept/{id}', 'acceptQuote')->name('quote.accept');
+        Route::post('quote/void/{id}', 'voidQuote')->name('quote.void');
+        Route::post('settlement-payment/record/{id}', 'recordSettlementPayment')->name('settlement.payment.record');
+        Route::post('close-account/{id}', 'closeAccount')->name('close.account');
+        Route::post('release-security/{id}', 'releaseSecurity')->name('release.security');
+        Route::get('lifecycle-history/{id}', 'lifecycleHistory')->name('lifecycle.history');
+
     });
 
     //============Staff================//

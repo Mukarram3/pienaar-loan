@@ -91,6 +91,107 @@
         </div>
 
         <div class="col-xl-8 mb-30">
+
+            {{-- LOAN LIFECYCLE PANEL --}}
+            <div class="card box--shadow1 mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
+                        <h5 class="card-title mb-0">
+                            @lang('Loan Lifecycle')
+                        </h5>
+                        <div>
+                            {!! $loan->lifecycle_stage_badge !!}
+                            <a href="{{ route('admin.loan.lifecycle.history', $loan->id) }}" class="btn btn-sm btn-outline-secondary ms-1">
+                                <i class="fas fa-history"></i> @lang('History')
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Stage progress indicator --}}
+                    <div class="d-flex flex-wrap gap-2 mb-3" style="font-size:11px;">
+                        @php
+                            $stages = [
+                                \App\Constants\Status::LIFECYCLE_ACTIVE              => 'Active',
+                                \App\Constants\Status::LIFECYCLE_REDEMPTION_OFFERED  => 'Redemption Offered',
+                                \App\Constants\Status::LIFECYCLE_REDEMPTION_ACCEPTED => 'Pending Payment',
+                                \App\Constants\Status::LIFECYCLE_SETTLED             => 'Settled',
+                                \App\Constants\Status::LIFECYCLE_CLOSED              => 'Closed',
+                                \App\Constants\Status::LIFECYCLE_SECURITY_RELEASED   => 'Security Released',
+                            ];
+                        @endphp
+                        @foreach($stages as $stageId => $stageLabel)
+                            <span class="badge {{ $loan->lifecycle_stage >= $stageId ? 'bg-success' : 'bg-light text-dark' }}" style="padding:6px 10px;">
+                    {{ $loop->iteration }}. {{ $stageLabel }}
+                </span>
+                        @endforeach
+                    </div>
+
+                    {{-- Active quote info if present --}}
+                    @if($loan->activeQuote && $loan->lifecycle_stage == \App\Constants\Status::LIFECYCLE_REDEMPTION_OFFERED)
+                        <div class="alert alert-warning py-2 mb-3" style="font-size:12px;">
+                            <strong>Active Redemption Offer:</strong>
+                            {{ $loan->activeQuote->quote_reference }} —
+                            Amount: <strong>{{ showAmount($loan->activeQuote->settlement_amount) }}</strong> —
+                            Expires: <strong>{{ $loan->activeQuote->expires_at->format('d M Y, H:i') }}</strong>
+                            @if($loan->activeQuote->isExpired())
+                                <span class="badge bg-danger ms-1">EXPIRED</span>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Pending payment info --}}
+                    @if($loan->lifecycle_stage == \App\Constants\Status::LIFECYCLE_REDEMPTION_ACCEPTED)
+                        <div class="alert alert-info py-2 mb-3" style="font-size:12px;">
+                            <strong>Awaiting Settlement Payment:</strong>
+                            {{ showAmount($loan->activeQuote->settlement_amount) }}
+                            — accepted {{ $loan->quote_accepted_at->diffForHumans() }}
+                        </div>
+                    @endif
+
+                    {{-- Stage-specific actions --}}
+                    <div class="d-flex flex-wrap gap-2">
+                        @if($loan->canAcceptQuote())
+                            <form action="{{ route('admin.loan.quote.accept', $loan->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-success" onclick="return confirm('Accept this redemption offer? The settlement amount will be locked.')">
+                                    <i class="fas fa-check-circle"></i> @lang('Accept Redemption Offer')
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#voidQuoteModal">
+                                <i class="fas fa-times"></i> @lang('Void Quote')
+                            </button>
+                        @endif
+
+                        @if($loan->canRecordSettlementPayment())
+                            <button type="button" class="btn btn--primary" data-bs-toggle="modal" data-bs-target="#settlementPaymentModal">
+                                <i class="fas fa-money-bill-wave"></i> @lang('Record Settlement Payment')
+                            </button>
+                        @endif
+
+                        @if($loan->canCloseAccount())
+                            <form action="{{ route('admin.loan.close.account', $loan->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-dark" onclick="return confirm('Close this account permanently? Settlement Certificate will be generated.')">
+                                    <i class="fas fa-lock"></i> @lang('Close Account')
+                                </button>
+                            </form>
+                        @endif
+
+                        @if($loan->canReleaseSecurity())
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#releaseSecurityModal">
+                                <i class="fas fa-key"></i> @lang('Release Security')
+                            </button>
+                        @endif
+
+                        @if($loan->lifecycle_stage == \App\Constants\Status::LIFECYCLE_SECURITY_RELEASED)
+                            <span class="badge bg-success py-2 px-3">
+                    <i class="fas fa-check-double"></i> @lang('Lifecycle Complete')
+                </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
             <div class="card box--shadow1">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2">@lang('Loan Form Submitted by User')</h5>
@@ -165,7 +266,7 @@
                                     </li>
 
                                     {{-- SETTLEMENT CERTIFICATE — only if loan fully paid --}}
-                                    @if ($loan->status == Status::LOAN_PAID)
+                                    @if(in_array($loan->lifecycle_stage, [Status::LIFECYCLE_CLOSED, Status::LIFECYCLE_SECURITY_RELEASED]))
                                         <li>
                                             <a class="dropdown-item"
                                                href="{{ route('admin.loan.settlement.certificate', $loan->id) }}"
@@ -352,6 +453,127 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="settlementPaymentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form action="{{ route('admin.loan.settlement.payment.record', $loan->id) }}" method="POST">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@lang('Record Settlement Payment')</h5>
+                        <button type="button" class="close" data-bs-dismiss="modal"><i class="las la-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        @if($loan->activeQuote)
+                            <div class="alert alert-info py-2 mb-3">
+                                <strong>Expected:</strong> {{ showAmount($loan->activeQuote->settlement_amount) }}
+                                (Quote {{ $loan->activeQuote->quote_reference }})
+                            </div>
+                        @endif
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label>@lang('Amount Received') <span class="text--danger">*</span></label>
+                                <input type="number" step="0.01" name="received_amount" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>@lang('Payment Date') <span class="text--danger">*</span></label>
+                                <input type="date" name="payment_date" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>@lang('Payment Method')</label>
+                                <select name="payment_method" class="form-control">
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="card">Card</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label>@lang('Payment Reference')</label>
+                                <input type="text" name="payment_reference" class="form-control" maxlength="100">
+                            </div>
+                            <div class="col-12 form-group">
+                                <label>@lang('Notes')</label>
+                                <textarea name="notes" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="col-12 form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="accept_short" value="1" id="acceptShort">
+                                    <label class="form-check-label" for="acceptShort">
+                                        Accept short payment if received amount is less than expected
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn--primary w-100">@lang('Record Payment & Mark Settled')</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="voidQuoteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.loan.quote.void', $loan->id) }}" method="POST">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@lang('Void Redemption Quote')</h5>
+                        <button type="button" class="close" data-bs-dismiss="modal"><i class="las la-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Voiding will return the loan to Active status. The quote PDF remains in archive.</p>
+                        <div class="form-group">
+                            <label>@lang('Reason')</label>
+                            <textarea name="reason" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger w-100">@lang('Void Quote')</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="releaseSecurityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form action="{{ route('admin.loan.release.security', $loan->id) }}" method="POST">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@lang('Release Security')</h5>
+                        <button type="button" class="close" data-bs-dismiss="modal"><i class="las la-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">@lang('Confirm each item that has been actioned:')</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="security_returned" value="1" id="secRet">
+                            <label class="form-check-label" for="secRet">Security Returned</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="lien_released" value="1" id="lienRel">
+                            <label class="form-check-label" for="lienRel">Lien / Encumbrances Released</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="documents_returned" value="1" id="docsRet">
+                            <label class="form-check-label" for="docsRet">Documents / Title Deeds Returned</label>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label>@lang('Notes')</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning w-100">@lang('Confirm Release')</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 @endsection

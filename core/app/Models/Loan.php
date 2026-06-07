@@ -17,6 +17,13 @@ class Loan extends Model
         'due_notification_sent' => 'datetime',
         'approved_at'           => 'datetime',
         'application_form'      => 'object',
+
+        'quote_accepted_at'       => 'datetime',
+        'settled_at'              => 'datetime',
+        'closed_at'               => 'datetime',
+        'security_released_at'    => 'datetime',
+        'original_loan_date'      => 'date',
+        'next_installment_date'   => 'date',
     ];
 
     /* ========= Relations ========= */
@@ -185,6 +192,93 @@ class Loan extends Model
                 'profit_ratio'         => $profitRatio,
             ];
         });
+    }
+
+    public function activeQuote()
+    {
+        return $this->belongsTo(RedemptionQuote::class, 'active_quote_id');
+    }
+
+    public function redemptionQuotes()
+    {
+        return $this->hasMany(RedemptionQuote::class);
+    }
+
+    public function settlementPayments()
+    {
+        return $this->hasMany(SettlementPayment::class);
+    }
+
+    public function lifecycleEvents()
+    {
+        return $this->hasMany(LoanLifecycleEvent::class)->latest();
+    }
+
+    public function lifecycleStageLabel(): Attribute
+    {
+        return Attribute::make(get: function () {
+            return match ((int) $this->lifecycle_stage) {
+                Status::LIFECYCLE_ACTIVE              => 'Active',
+                Status::LIFECYCLE_REDEMPTION_OFFERED  => 'Redemption Offered',
+                Status::LIFECYCLE_REDEMPTION_ACCEPTED => 'Redemption Pending Payment',
+                Status::LIFECYCLE_SETTLED             => 'Settled',
+                Status::LIFECYCLE_CLOSED              => 'Closed',
+                Status::LIFECYCLE_SECURITY_RELEASED   => 'Security Released',
+                default                               => 'Unknown',
+            };
+        });
+    }
+
+    public function lifecycleStageBadge(): Attribute
+    {
+        return Attribute::make(get: function () {
+            $map = [
+                Status::LIFECYCLE_ACTIVE              => ['primary', 'Active'],
+                Status::LIFECYCLE_REDEMPTION_OFFERED  => ['warning', 'Redemption Offered'],
+                Status::LIFECYCLE_REDEMPTION_ACCEPTED => ['info', 'Pending Payment'],
+                Status::LIFECYCLE_SETTLED             => ['success', 'Settled'],
+                Status::LIFECYCLE_CLOSED              => ['dark', 'Closed'],
+                Status::LIFECYCLE_SECURITY_RELEASED   => ['secondary', 'Security Released'],
+            ];
+            [$class, $label] = $map[(int) $this->lifecycle_stage] ?? ['light', 'Unknown'];
+            return createBadge($class, $label);
+        });
+    }
+
+    public function canMakePayment(): bool
+    {
+        return in_array((int) $this->lifecycle_stage, [
+            Status::LIFECYCLE_ACTIVE,
+            Status::LIFECYCLE_REDEMPTION_OFFERED,
+        ]);
+    }
+
+    public function canGenerateRedemptionQuote(): bool
+    {
+        return $this->lifecycle_stage == Status::LIFECYCLE_ACTIVE
+            && in_array($this->status, [Status::LOAN_RUNNING, Status::LOAN_APPROVED]);
+    }
+
+    public function canAcceptQuote(): bool
+    {
+        return $this->lifecycle_stage == Status::LIFECYCLE_REDEMPTION_OFFERED
+            && $this->activeQuote
+            && !$this->activeQuote->isExpired();
+    }
+
+    public function canRecordSettlementPayment(): bool
+    {
+        return $this->lifecycle_stage == Status::LIFECYCLE_REDEMPTION_ACCEPTED;
+    }
+
+    public function canCloseAccount(): bool
+    {
+        return $this->lifecycle_stage == Status::LIFECYCLE_SETTLED;
+    }
+
+    public function canReleaseSecurity(): bool
+    {
+        return $this->lifecycle_stage == Status::LIFECYCLE_CLOSED;
     }
 
     /* ========= Other Methods ========= */

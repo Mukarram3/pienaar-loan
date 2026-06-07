@@ -17,6 +17,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Services\LoanLifecycleService;
+use App\Models\LoanLifecycleEvent;
+use App\Models\SettlementPayment;
 use TCPDF;
 
 class LoanController extends Controller
@@ -73,7 +76,9 @@ class LoanController extends Controller
 
     public function details($id)
     {
-        $loan      = Loan::where('id', $id)->with('plan', 'user', 'documents')->firstOrFail();
+        $loan = Loan::where('id', $id)
+            ->with(['plan', 'user', 'documents', 'activeQuote', 'lifecycleEvents.actor:id,name', 'settlementPayments'])
+            ->firstOrFail();
         $pageTitle = 'Loan Details';
         return view('admin.loan.details', compact('pageTitle', 'loan'));
     }
@@ -445,6 +450,8 @@ class LoanController extends Controller
             'notes'               => 'Total penalties: ' . number_format($totalPenalties, 2),
         ]);
 
+        app(LoanLifecycleService::class)->attachQuote($loan, $quote);
+
         ReportLog::create([
             'loan_id'      => $loan->id,
             'generated_by' => auth('admin')->id(),
@@ -616,8 +623,12 @@ class LoanController extends Controller
         $loan = Loan::with(['user', 'plan'])->findOrFail($id);
 
         // Safety: only generate for fully paid loans
-        if ($loan->status != Status::LOAN_PAID) {
-            return back()->with('error', 'Settlement certificate is only available for fully settled loans.');
+        if (!in_array($loan->lifecycle_stage, [
+            Status::LIFECYCLE_CLOSED,
+            Status::LIFECYCLE_SECURITY_RELEASED,
+        ])) {
+            $notify[] = ['error', 'Settlement Certificate is only available once the account has been formally closed.'];
+            return back()->withNotify($notify);
         }
 
         // Get-or-create settlement record (stable ref across regenerations)
@@ -684,5 +695,69 @@ class LoanController extends Controller
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
+    }
+
+    public function acceptQuote($id, LoanLifecycleService $svc)
+    {
+        $loan = Loan::findOrFail($id);
+        $result = $svc->acceptQuote($loan);
+        $notify[] = [$result['ok'] ? 'success' : 'error', $result['message']];
+        return back()->withNotify($notify);
+    }
+
+    public function voidQuote(Request $request, $id, LoanLifecycleService $svc)
+    {
+        $loan = Loan::findOrFail($id);
+        $result = $svc->voidQuote($loan, $request->reason);
+        $notify[] = [$result['ok'] ? 'success' : 'error', $result['message']];
+        return back()->withNotify($notify);
+    }
+
+    public function recordSettlementPayment(Request $request, $id, LoanLifecycleService $svc)
+    {
+        $data = $request->validate([
+            'received_amount'   => 'required|numeric|min:0',
+            'payment_date'      => 'required|date',
+            'payment_method'    => 'nullable|string|max:50',
+            'payment_reference' => 'nullable|string|max:100',
+            'notes'             => 'nullable|string|max:1000',
+            'accept_short'      => 'nullable|in:0,1',
+        ]);
+
+        $loan = Loan::findOrFail($id);
+        $result = $svc->recordSettlementPayment($loan, $data);
+        $notify[] = [$result['ok'] ? 'success' : 'error', $result['message']];
+        return back()->withNotify($notify);
+    }
+
+    public function closeAccount($id, LoanLifecycleService $svc)
+    {
+        $loan = Loan::findOrFail($id);
+        $result = $svc->closeAccount($loan);
+        $notify[] = [$result['ok'] ? 'success' : 'error', $result['message']];
+        return back()->withNotify($notify);
+    }
+
+    public function releaseSecurity(Request $request, $id, LoanLifecycleService $svc)
+    {
+        $data = $request->validate([
+            'security_returned'  => 'nullable|in:0,1',
+            'lien_released'      => 'nullable|in:0,1',
+            'documents_returned' => 'nullable|in:0,1',
+            'notes'              => 'nullable|string|max:1000',
+        ]);
+
+        $loan = Loan::findOrFail($id);
+        $result = $svc->releaseSecurity($loan, $data);
+        $notify[] = [$result['ok'] ? 'success' : 'error', $result['message']];
+        return back()->withNotify($notify);
+    }
+
+    public function lifecycleHistory($id)
+    {
+        $loan = Loan::findOrFail($id);
+        $events = $loan->lifecycleEvents()->with('actor:id,name')->paginate(20);
+        $pageTitle = 'Lifecycle History — ' . $loan->loan_number;
+        return view('admin.loan.lifecycle_history', compact('pageTitle', 'loan', 'events'));
     }
 }
