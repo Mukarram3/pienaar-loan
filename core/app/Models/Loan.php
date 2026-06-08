@@ -24,6 +24,7 @@ class Loan extends Model
         'security_released_at'    => 'datetime',
         'original_loan_date'      => 'date',
         'next_installment_date'   => 'date',
+        'penalties_last_run_at' => 'datetime',
     ];
 
     /* ========= Relations ========= */
@@ -156,10 +157,14 @@ class Loan extends Model
     public function totalOutstanding(): Attribute
     {
         return Attribute::make(get: function () {
-            $payable = (float) $this->payable_amount;
-            $paid    = (float) $this->paid_amount;
+            $payable     = (float) $this->payable_amount;
+            $paid        = (float) $this->paid_amount;
             $loanBalance = max(0, $payable - $paid);
-            return $loanBalance + (float) $this->historical_late_fees + (float) $this->other_charges;
+
+            return $loanBalance
+                + (float) $this->penalties_outstanding
+                + (float) $this->historical_late_fees
+                + (float) $this->other_charges;
         });
     }
 
@@ -279,6 +284,13 @@ class Loan extends Model
     public function canReleaseSecurity(): bool
     {
         return $this->lifecycle_stage == Status::LIFECYCLE_CLOSED;
+    }
+
+    public function penaltiesOutstanding(): Attribute
+    {
+        return Attribute::make(get: function () {
+            return max(0, (float) $this->accrued_penalties - (float) $this->penalties_paid - (float) $this->penalties_waived);
+        });
     }
 
     /* ========= Other Methods ========= */

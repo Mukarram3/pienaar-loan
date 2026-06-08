@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Constants\Status;
 use App\Models\Admin;
 use App\Models\Installment;
 use App\Models\Loan;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Console\Command\Command as CommandAlias;
@@ -136,46 +138,56 @@ class LoanDelay extends Command
 
             // 🚨 4. After grace period — apply delay charge
             if (now()->greaterThan($graceEndDate)) {
-
                 Log::info('charges applied');
+
                 $delayCharge = 0;
                 if ($plan->fixed_charge > 0) {
                     $delayCharge = $plan->fixed_charge;
                 } elseif (!empty($plan->percent_charge)) {
-//                    $unpaid_loan_count = Installment::where('loan_id',$loan->id)->whereNull('given_at')->count();
-//                    $remaining_loan_balance = $loan->per_installment * $unpaid_loan_count;
                     $loan_balance = $loan->amount;
                     $delayCharge = $loan_balance * ($plan->percent_charge / 100);
                 }
 
-                // Apply and save
-                if ($user) {
-                    $user->balance -= ($installment->delay_charge ?? 0) + $delayCharge;
-                    $user->save();
-                }
-//                $installment->delay_charge = ($installment->delay_charge ?? 0) + $delayCharge;
-//                $installment->save();
+                if ($delayCharge > 0 && $user) {
+                    DB::transaction(function () use ($loan, $user, $installment, $delayCharge) {
+                        // 1. Track on installment row
+                        $installment->delay_charge = (float) ($installment->delay_charge ?? 0) + $delayCharge;
+                        $installment->save();
 
-                $shortCodes['late_fee'] = $delayCharge;
-                $shortCodes['balance'] = $installment->delay_charge + $loan->per_installment;
+                        // 2. Accumulate on loan model
+                        $loan->accrued_penalties = (float) $loan->accrued_penalties + $delayCharge;
+
+                        // 3. Deduct from user balance
+                        $user->balance = (float) $user->balance - $delayCharge;
+                        $user->save();
+
+                        // 4. Track how much was deducted
+                        $loan->penalties_paid = (float) $loan->penalties_paid + $delayCharge;
+                        $loan->penalties_last_run_at = now();
+                        $loan->save();
+                    });
+                }
+
+                $shortCodes['late_fee'] = showAmount($delayCharge);
+                $shortCodes['balance']  = showAmount($user->balance);
 
                 $manager = Admin::find($loan->approved_by);
-
-                if ($manager){
+                if ($manager) {
                     $shortCodes['manager_full_name'] = $manager->name;
                     notify($manager, 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
-                }
-                else{
+                } else {
                     $shortCodes['manager_full_name'] = '';
-//                    notify(Admin::where('id','1')->first(), 'CHARGES_APPLIED_ON_LOAN', $shortCodes);
                 }
                 notify($user, "CHARGES_APPLIED_ON_LOAN", $shortCodes);
 
                 Log::info("Delay charge applied", [
-                    'installment_id' => $installment->id,
-                    'due_date' => $installmentDate->toDateString(),
-                    'grace_end' => $graceEndDate->toDateString(),
-                    'delay_charge' => $delayCharge,
+                    'loan_number'     => $loan->loan_number,
+                    'installment_id'  => $installment->id,
+                    'due_date'        => $installmentDate->toDateString(),
+                    'grace_end'       => $graceEndDate->toDateString(),
+                    'delay_charge'    => $delayCharge,
+                    'accrued_total'   => $loan->accrued_penalties,
+                    'paid_total'      => $loan->penalties_paid,
                 ]);
             }
         }

@@ -194,26 +194,29 @@
             <td>{{ $penalties['grace_days'] }} day(s)</td>
         </tr>
         <tr>
-            <td class="label" style="color:#c0392b;"><strong>Total Penalties Accrued</strong></td>
-            <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($penalties['total_penalties']) }}</strong></td>
+            <td class="label">Total Penalties Accrued</td>
+            <td class="amount">{{ showAmount($penalties['total_penalties']) }}</td>
         </tr>
-        @if($isLegacy ?? false)
+        @if($penalties['penalties_paid'] > 0)
             <tr>
-                <td class="label">Historical Late Fees Imported</td>
-                <td class="amount">{{ showAmount($historicalLateFees ?? 0) }}</td>
-            </tr>
-            <tr>
-                <td class="label">Other Charges / Legal Fees</td>
-                <td class="amount">{{ showAmount($otherCharges ?? 0) }}</td>
-            </tr>
-            <tr>
-                <td class="label" style="color:#c0392b;"><strong>Total Outstanding (incl. all charges)</strong></td>
-                <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($totalOutstandingAll ?? 0) }}</strong></td>
+                <td class="label">Penalties Paid (from balance)</td>
+                <td class="amount" style="color:#1e7e34;">{{ showAmount($penalties['penalties_paid']) }}</td>
             </tr>
         @endif
+        @if($penalties['penalties_waived'] > 0)
+            <tr>
+                <td class="label">Penalties Waived</td>
+                <td class="amount" style="color:#777;">{{ showAmount($penalties['penalties_waived']) }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td class="label" style="color:#c0392b;"><strong>Outstanding Penalties</strong></td>
+            <td class="amount" style="color:#c0392b;"><strong>{{ showAmount($penalties['penalties_outstanding']) }}</strong></td>
+        </tr>
     </table>
     <p style="font-size:9px; color:#777; margin-top:6px; font-style:italic;">
-        Penalties are tracked separately from the loan balance and are not included in the Current Outstanding Balance above.
+        Penalties are tracked separately from the loan balance and accrued daily via automated system.
+        @if($penalties['last_run_at']) Last accrual: {{ \Carbon\Carbon::parse($penalties['last_run_at'])->format('d M Y, H:i') }}. @endif
     </p>
 </div>
 

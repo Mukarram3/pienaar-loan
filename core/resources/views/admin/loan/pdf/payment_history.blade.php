@@ -154,14 +154,21 @@
                 <span class="lbl">Daily Penalty Rate</span>
                 <span class="val">{{ showAmount($penalties['daily_penalty']) }}</span>
             </div>
+            <div class="row">
+                <span class="lbl">Total Penalties Accrued</span>
+                <span class="val">{{ showAmount($penalties['total_penalties']) }}</span>
+            </div>
+            @if($penalties['penalties_paid'] > 0)
+                <div class="row">
+                    <span class="lbl" style="color:#1e7e34;">Penalties Paid from Balance</span>
+                    <span class="val" style="color:#1e7e34;">{{ showAmount($penalties['penalties_paid']) }}</span>
+                </div>
+            @endif
             <div class="row" style="border-top:1px solid #c0392b; padding-top:6px; margin-top:4px;">
-                <span class="lbl" style="color:#c0392b; font-weight:bold;">Total Outstanding Penalties</span>
-                <span class="val" style="color:#c0392b; font-size:12px;">{{ showAmount($penalties['total_penalties']) }}</span>
+                <span class="lbl" style="color:#c0392b; font-weight:bold;">Outstanding Penalties</span>
+                <span class="val" style="color:#c0392b; font-size:12px;">{{ showAmount($penalties['penalties_outstanding']) }}</span>
             </div>
         </div>
-        <p style="font-size:9px; color:#777; font-style:italic;">
-            Penalties are tracked separately from the loan balance shown above.
-        </p>
     </div>
 @endif
 

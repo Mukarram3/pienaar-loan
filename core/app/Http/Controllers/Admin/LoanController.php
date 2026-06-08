@@ -15,6 +15,7 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Services\LoanLifecycleService;
@@ -340,39 +341,42 @@ class LoanController extends Controller
     private function calculatePenalties(Loan $loan): array
     {
         $today = now();
-        $graceDays = (int) ($loan->delay_value ?? 0);
-        $dailyPenalty = (float) $loan->delay_charge;
+        $graceDays    = (int) ($loan->delay_value ?? $loan->plan->delay_value ?? 0);
+        $dailyPenalty = (float) ($loan->delay_charge ?: ($loan->plan->delay_charge ?? 0));
 
-        // Unpaid installments past their due date
         $missed = Installment::where('loan_id', $loan->id)
             ->whereNull('given_at')
             ->whereDate('installment_date', '<', $today)
             ->orderBy('installment_date', 'asc')
             ->get();
 
-        $totalPenalties = 0;
+        // Build per-installment ledger for display purposes
         $penaltyLedger = [];
-
         foreach ($missed as $inst) {
             $dueDate     = \Carbon\Carbon::parse($inst->installment_date);
             $daysOverdue = max(0, $dueDate->diffInDays($today) - $graceDays);
-            $accrued     = $daysOverdue * $dailyPenalty;
-            $totalPenalties += $accrued;
 
             $penaltyLedger[] = [
                 'installment_date' => $dueDate,
                 'days_overdue'     => $daysOverdue,
                 'daily_penalty'    => $dailyPenalty,
-                'accrued'          => $accrued,
+                'accrued'          => (float) $inst->delay_charge,
             ];
         }
 
         return [
-            'missed_count'    => $missed->count(),
-            'daily_penalty'   => $dailyPenalty,
-            'total_penalties' => $totalPenalties,
-            'penalty_ledger'  => $penaltyLedger,
-            'grace_days'      => $graceDays,
+            'missed_count'         => $missed->count(),
+            'daily_penalty'        => $dailyPenalty,
+            'grace_days'           => $graceDays,
+
+            // Authoritative figures from the loan record (cron-managed)
+            'total_penalties'      => (float) $loan->accrued_penalties,
+            'penalties_paid'       => (float) $loan->penalties_paid,
+            'penalties_waived'     => (float) $loan->penalties_waived,
+            'penalties_outstanding'=> (float) $loan->penalties_outstanding,
+
+            'penalty_ledger'       => $penaltyLedger,
+            'last_run_at'          => $loan->penalties_last_run_at,
         ];
     }
 
@@ -424,7 +428,7 @@ class LoanController extends Controller
 
         // Penalty engine
         $penalties = $this->calculatePenalties($loan);
-        $totalPenalties = $penalties['total_penalties'];
+        $totalPenalties = $penalties['penalties_outstanding'];
 
         // NEW FORMULA
         $earlyRedemptionLoan    = $outstanding * 0.50;       // 50% of remaining loan balance
@@ -695,6 +699,41 @@ class LoanController extends Controller
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
+    }
+
+    public function waivePenalty(Request $request, $id)
+    {
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $loan = Loan::findOrFail($id);
+        $outstanding = $loan->penalties_outstanding;
+
+        if ($data['amount'] > $outstanding) {
+            $notify[] = ['error', 'Waiver amount cannot exceed outstanding penalties (' . showAmount($outstanding) . ').'];
+            return back()->withNotify($notify);
+        }
+
+        DB::transaction(function () use ($loan, $data) {
+            $loan->penalties_waived = (float) $loan->penalties_waived + $data['amount'];
+            $loan->save();
+
+            if (class_exists(\App\Models\LoanLifecycleEvent::class)) {
+                \App\Models\LoanLifecycleEvent::log(
+                    $loan->id,
+                    'penalty_waived',
+                    $loan->lifecycle_stage,
+                    $loan->lifecycle_stage,
+                    'Penalty waiver: ' . showAmount($data['amount']) . '. Reason: ' . $data['reason'],
+                    ['amount' => $data['amount'], 'reason' => $data['reason']]
+                );
+            }
+        });
+
+        $notify[] = ['success', 'Penalty of ' . showAmount($data['amount']) . ' waived.'];
+        return back()->withNotify($notify);
     }
 
     public function acceptQuote($id, LoanLifecycleService $svc)
