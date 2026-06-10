@@ -307,8 +307,9 @@ class LoanController extends Controller
     protected function loanData($scope = null, $id = 0)
     {
         if (Auth::guard('admin')->user()->id != '1'){
-            $query = Loan::orderBy('id', 'DESC')
-                ->where('approved_by', Auth::guard('admin')->user()->id);
+//            $query = Loan::orderBy('id', 'DESC')
+//                ->where('approved_by', Auth::guard('admin')->user()->id);
+            $query = Loan::orderBy('id', 'DESC');
         }
         else{
             $query = Loan::orderBy('id', 'DESC');
@@ -431,7 +432,9 @@ class LoanController extends Controller
         $totalPenalties = $penalties['penalties_outstanding'];
 
         // NEW FORMULA
-        $earlyRedemptionLoan    = $outstanding * 0.50;       // 50% of remaining loan balance
+        $remainingInstallments = $loan->total_installment - $loan->given_installment;
+        $totalRemainingPayments = $remainingInstallments * $loan->per_installment;
+        $earlyRedemptionLoan = $totalRemainingPayments * 0.50;
         $discountedPenaltyPmt   = $totalPenalties * 0.75;    // 75% of accrued penalties
         $totalSettlement        = $earlyRedemptionLoan + $discountedPenaltyPmt;
 
@@ -470,6 +473,8 @@ class LoanController extends Controller
             'payableAmount'        => $payableAmount,
             'amountPaid'           => $amountPaid,
             'outstanding'          => $outstanding,
+            'remainingInstallments' => $remainingInstallments,
+            'totalRemainingPayments'=> $totalRemainingPayments,
             'earlyRedemptionLoan'  => $earlyRedemptionLoan,
             'loanDiscount'         => $loanDiscount,
             'totalPenalties'       => $totalPenalties,

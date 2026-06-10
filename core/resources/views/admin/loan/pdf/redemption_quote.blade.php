@@ -85,11 +85,15 @@
             <span class="val">{{ showAmount($amountPaid) }}</span>
         </div>
         <div class="row">
-            <span class="lbl">Remaining Loan Balance</span>
-            <span class="val">{{ showAmount($outstanding) }}</span>
+            <span class="lbl">Instalments Remaining</span>
+            <span class="val">{{ $remainingInstallments }} × {{ showAmount($loan->per_installment) }}</span>
+        </div>
+        <div class="row">
+            <span class="lbl">Total Remaining Payments</span>
+            <span class="val">{{ showAmount($totalRemainingPayments) }}</span>
         </div>
         <div class="row" style="border-top:1px solid #1a4d8c; padding-top:8px; margin-top:4px;">
-            <span class="lbl" style="color:#1a4d8c;">Early Redemption Loan Figure (50%)</span>
+            <span class="lbl" style="color:#1a4d8c;">Early Redemption Loan Figure (50% of remaining)</span>
             <span class="val" style="color:#1a4d8c; font-size:13px;">{{ showAmount($earlyRedemptionLoan) }}</span>
         </div>
         <div class="row" style="font-size:10px; color:#777;">
