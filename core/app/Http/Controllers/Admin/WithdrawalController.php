@@ -108,7 +108,11 @@ class WithdrawalController extends Controller
          $withdraw->save();
 
         $loan = Loan::where('user_id', $withdraw->user_id)->first();
-        $manager = Admin::find($loan->approved_by);
+        $manager = null;
+
+        if ($loan && $loan->approved_by) {
+            $manager = Admin::find($loan->approved_by);
+        }
 
         $method = $withdraw->method;
         if ($method->status == Status::DISABLE) {
