@@ -59,9 +59,15 @@ class LoanController extends Controller {
 
     public function plans() {
         $pageTitle = 'Loan Plans';
-        $categories = Category::where('Status', Status::ENABLE)->with('plans')->whereHas('plans', function ($query) {
-            $query->where('status', Status::ENABLE);
-        })->latest()->get();
+        $categories = Category::where('Status', Status::ENABLE)
+            ->with(['plans' => function ($query) {
+                $query->where('status', Status::ENABLE);
+            }])
+            ->whereHas('plans', function ($query) {
+                $query->where('status', Status::ENABLE);
+            })
+            ->latest()
+            ->get();
         return view('Template::user.loan.plans', compact('pageTitle', 'categories'));
     }
 

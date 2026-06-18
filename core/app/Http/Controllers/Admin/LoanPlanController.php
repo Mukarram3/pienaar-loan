@@ -15,7 +15,7 @@ class LoanPlanController extends Controller
     public function index()
     {
         $pageTitle = 'All Loan Plans';
-        $plans     = LoanPlan::active()->with('category')->searchable(['name', 'title', 'installment_interval', 'category:name'])->latest()->paginate(getPaginate());
+        $plans     = LoanPlan::with('category')->searchable(['name', 'title', 'installment_interval', 'category:name'])->latest()->paginate(getPaginate());
         return view('admin.plans.loan.index', compact('pageTitle', 'plans'));
     }
 
