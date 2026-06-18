@@ -142,7 +142,9 @@ class SiteController extends Controller
         $pageTitle = 'Loan Plans';
 
         $categories = Category::active()
-            ->with('plans')
+            ->with(['plans' => function ($query) {
+                $query->where('status', Status::ENABLE);
+            }])
             ->whereHas('plans', function ($query) {
                 $query->active();
             })->latest()->get();
