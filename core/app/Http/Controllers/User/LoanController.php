@@ -319,9 +319,8 @@ class LoanController extends Controller {
         $paid_installments = Installment::where('loan_id', $loan->id)
             ->whereNotNull('given_at')
             ->count();
-        $current_installment_number = $paid_installments - 1;
 
-        $loan->given_installment = $current_installment_number;
+        $loan->given_installment = $paid_installments;
 
         $user = auth()->user();
         $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
@@ -331,7 +330,7 @@ class LoanController extends Controller {
         $shortCodes['due_date'] = showDateTime($installment->installment_date, 'd M Y');
         $shortCodes['amount'] = showAmount($loan->per_installment + $installment->delay_charge,currencyFormat:false);
         $shortCodes['balance'] = showAmount(auth()->user()->balance,currencyFormat:false);
-        $shortCodes['current_installment'] = $current_installment_number;
+        $shortCodes['current_installment'] = $paid_installments;
         $shortCodes['total_installment'] = $total_installments;
 
         notify($user, 'Loan_Repayment_Received', $shortCodes);
