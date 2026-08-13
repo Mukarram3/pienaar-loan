@@ -12,7 +12,7 @@
                 <div class="card custom--card">
                     <div class="card-body">
                         @php
-                            $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
+                            $total_amount_payable = ($amount * $plan->per_installment / 100) * $plan->total_installment;
                         @endphp
                         <h5 class="text-center">
                             @lang('Before applying for your loan')
