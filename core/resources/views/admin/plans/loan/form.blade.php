@@ -1,3 +1,8 @@
+{{--
+    =============================================================
+    File: resources/views/admin/plans/loan/form.blade.php
+    =============================================================
+--}}
 @extends('admin.layouts.app')
 @section('panel')
     <div class="row">
@@ -72,8 +77,39 @@
                                 </div>
                             </div>
 
+                            {{-- Calculation engine selector (spec s.24) --}}
+                            <div class="row">
+                                <div class="col-md-12 form-group">
+                                    <label>@lang('Calculation Type') <span class="text--danger">*</span></label>
+                                    <select name="calculation_type" id="calculation_type" class="form-control">
+                                        <option value="standard"
+                                            @selected(old('calculation_type', $plan->calculation_type ?? 'standard') === 'standard')>
+                                            @lang('Standard — instalment as configured')
+                                        </option>
+                                        <option value="fixed_capital"
+                                            @selected(old('calculation_type', $plan->calculation_type ?? 'standard') === 'fixed_capital')>
+                                            @lang('Fixed Capital Repayment — Per Instalment % is a capital rate')
+                                        </option>
+                                    </select>
+                                    <small class="text-muted">
+                                        @lang('On a Fixed Capital Repayment plan the Per Instalment % is the percentage of ORIGINAL CAPITAL repaid each interval. The full instalment is derived as capital divided by the Capital Allocation.')
+                                    </small>
+                                </div>
+                            </div>
+
+                            {{-- Live worked example so the administrator can see the effect --}}
+                            <div class="row" id="calc_preview_block" style="display:none;">
+                                <div class="col-12 form-group">
+                                    <div class="alert alert-info py-2 mb-0" style="font-size:13px;">
+                                        <strong>@lang('Worked example on a')
+                                            <span id="calc_preview_amount">R100,000</span> @lang('advance'):</strong>
+                                        <div id="calc_preview_body" class="mt-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Capital / Profit allocation — only relevant for legacy plans --}}
-                            <div id="legacy_allocation_block" class="row" style="display: {{ old('is_legacy', $plan->is_legacy ?? 0) == 1 ? 'flex' : 'none' }};">
+                            <div id="legacy_allocation_block" class="row" style="display: {{ (old('is_legacy', $plan->is_legacy ?? 0) == 1 || old('calculation_type', $plan->calculation_type ?? 'standard') === 'fixed_capital') ? 'flex' : 'none' }};">
                                 <div class="col-md-6 form-group">
                                     <label>@lang('Capital Allocation (%)') <span class="text--danger">*</span></label>
                                     <input type="number" step="0.01" min="0" max="100" name="capital_ratio_pct" id="capital_ratio_pct"
@@ -284,20 +320,98 @@
             const profInp = document.getElementById('profit_ratio_pct');
             const warn   = document.getElementById('allocation_warning');
 
-            if (!toggle) return;
+            const calcType = document.getElementById('calculation_type');
+            const preview  = document.getElementById('calc_preview_block');
+            const prevBody = document.getElementById('calc_preview_body');
 
-            toggle.addEventListener('change', function () {
-                block.style.display = (this.value === '1') ? 'flex' : 'none';
-            });
+            function isFixedCapital() {
+                return calcType && calcType.value === 'fixed_capital';
+            }
+
+            function showAllocationBlock() {
+                if (!block) return;
+                const legacyOn = toggle && toggle.value === '1';
+                block.style.display = (legacyOn || isFixedCapital()) ? 'flex' : 'none';
+            }
+
+            // Mirrors LoanCalculator exactly. Display only -- the server is
+            // always authoritative (spec s.20).
+            function renderPreview() {
+                if (!preview) return;
+
+                if (!isFixedCapital()) {
+                    preview.style.display = 'none';
+                    return;
+                }
+
+                const principal = 100000;
+                const perPct    = parseFloat($('[name=per_installment]').val() || 0);
+                const n         = parseInt($('[name=total_installment]').val() || 0, 10);
+                const capRatio  = parseFloat(capInp ? capInp.value : 50) / 100;
+                const profRatio = parseFloat(profInp ? profInp.value : 50) / 100;
+
+                if (!perPct || !n || !capRatio || Math.abs((capRatio + profRatio) - 1) > 0.0001) {
+                    prevBody.innerHTML = '<em>Enter a valid Per Instalment %, Total Instalments and a Capital + Profit Allocation summing to 100% to see the example.</em>';
+                    preview.style.display = 'block';
+                    return;
+                }
+
+                const money = v => 'R' + v.toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                const capitalPer = Math.round(principal * perPct) / 100;
+                const totalPer   = Math.round(capitalPer * 100 / capRatio) / 100;
+                const profitPer  = Math.round((totalPer - capitalPer) * 100) / 100;
+                const totalCap   = Math.round(principal * perPct * n) / 100;
+                const totalRepay = Math.round(totalCap * 100 / capRatio) / 100;
+                const totalProf  = Math.round((totalRepay - totalCap) * 100) / 100;
+                const recovery   = perPct * n;
+
+                let html = 'Instalment <strong>' + money(totalPer) + '</strong> '
+                         + '(capital ' + money(capitalPer) + ' + profit ' + money(profitPer) + ')'
+                         + ' x ' + n + ' = <strong>' + money(totalRepay) + '</strong> total repayment'
+                         + '<br>Total capital ' + money(totalCap) + ' &nbsp;|&nbsp; total profit ' + money(totalProf);
+
+                if (Math.abs(recovery - 100) > 0.01) {
+                    html += '<br><span style="color:#b00;"><strong>Warning:</strong> '
+                          + perPct + '% x ' + n + ' = ' + recovery.toFixed(2)
+                          + '% of capital (expected 100%). The borrower is scheduled to repay '
+                          + (recovery > 100 ? 'MORE' : 'LESS') + ' than the capital advanced.</span>';
+                }
+
+                prevBody.innerHTML = html;
+                preview.style.display = 'block';
+            }
 
             function checkSum() {
+                if (!capInp || !profInp || !warn) return;
                 const total = parseFloat(capInp.value || 0) + parseFloat(profInp.value || 0);
                 warn.style.display = Math.abs(total - 100) > 0.01 ? 'block' : 'none';
             }
-            if (capInp && profInp) {
-                capInp.addEventListener('input', checkSum);
-                profInp.addEventListener('input', checkSum);
+
+            if (toggle) {
+                toggle.addEventListener('change', function () {
+                    showAllocationBlock();
+                    renderPreview();
+                });
             }
+
+            if (calcType) {
+                calcType.addEventListener('change', function () {
+                    showAllocationBlock();
+                    renderPreview();
+                });
+            }
+
+            if (capInp && profInp) {
+                capInp.addEventListener('input', function () { checkSum(); renderPreview(); });
+                profInp.addEventListener('input', function () { checkSum(); renderPreview(); });
+            }
+
+            $('[name=per_installment], [name=total_installment]').on('input', renderPreview);
+
+            showAllocationBlock();
+            checkSum();
+            renderPreview();
 
         })(jQuery);
     </script>

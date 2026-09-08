@@ -90,7 +90,14 @@ class LoanController extends Controller {
         $plan      = $loan['plan'];
         $amount    = $loan['amount'];
         $pageTitle = 'Apply For Loan';
-        return view('Template::user.loan.form', compact('pageTitle', 'plan', 'amount'));
+
+        // Authoritative figures from the calculation engine. Null for plans
+        // that do not use the Fixed Capital engine — the view then falls back
+        // to its previous display (spec s.24).
+        $plan  = LoanPlan::active()->findOrFail($plan->id);
+        $quote = $plan->quoteFor((float) $amount);
+
+        return view('Template::user.loan.form', compact('pageTitle', 'plan', 'amount', 'quote'));
     }
 
     public function confirm(Request $request) {
@@ -120,8 +127,18 @@ class LoanController extends Controller {
         $request->validate($validationRule);
         $applicationForm = $formProcessor->processFormData($request, $formData);
 
-        $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
-        $perInstallment = $total_amount_payable/$plan->total_installment;
+        // Instalment figures come from the ONE calculation engine, the same one
+        // that produced the quotation the borrower just reviewed (spec s.20).
+        // Plans not on the Fixed Capital engine keep their previous formula.
+        $quote = $plan->quoteFor((float) $amount);
+
+        if ($quote) {
+            $perInstallment       = $quote->totalPerInstallment;
+            $total_amount_payable = $quote->totalContractualRepayment;
+        } else {
+            $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
+            $perInstallment       = $total_amount_payable / $plan->total_installment;
+        }
 
         $percentCharge = $plan->per_installment * $plan->percent_charge / 100;
         $charge        = $plan->fixed_charge + $percentCharge;
@@ -144,6 +161,15 @@ class LoanController extends Controller {
         $loan->delay_value            = $plan->delay_value;
         $loan->total_installment      = $plan->total_installment;
         $loan->application_form       = $applicationForm;
+
+        // Freeze the contracted capital/profit allocation onto the loan so a
+        // later plan edit cannot re-split it (spec s.11, s.21).
+        if ($quote) {
+            $loan->capital_ratio            = $quote->terms->capitalRatio;
+            $loan->profit_ratio             = $quote->terms->profitRatio;
+            $loan->allocation_ledger_active = true;
+        }
+
         $loan->save();
 
 

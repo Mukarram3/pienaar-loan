@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/Admin/LoanPlanController.php
+// =============================================================
 namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
@@ -67,23 +70,31 @@ class LoanPlanController extends Controller
         $plan->is_featured                = $request->is_featured;
         $plan->application_fixed_charge   = $request->application_fixed_charge;
         $plan->application_percent_charge = $request->application_percent_charge;
-        $plan->is_legacy = $request->boolean('is_legacy');
+        $plan->is_legacy        = $request->boolean('is_legacy');
+        $plan->calculation_type = $request->calculation_type === LoanPlan::CALC_FIXED_CAPITAL
+            ? LoanPlan::CALC_FIXED_CAPITAL
+            : LoanPlan::CALC_STANDARD;
 
-        if ($plan->is_legacy) {
+        if ($plan->is_legacy || $plan->usesFixedCapital()) {
             $capPct  = (float) ($request->capital_ratio_pct ?? 50);
             $profPct = (float) ($request->profit_ratio_pct ?? 50);
 
-            // Normalize if doesn't sum to 100
-            $total = $capPct + $profPct;
-            if ($total > 0 && abs($total - 100) > 0.01) {
-                $capPct  = ($capPct / $total) * 100;
-                $profPct = 100 - $capPct;
+            // Allocation must sum to 100%. Values entered by the administrator
+            // are NEVER silently adjusted (spec s.9) — the save is rejected
+            // instead, so nobody discovers a rewritten ratio after the fact.
+            if (abs(($capPct + $profPct) - 100) > 0.01) {
+                return back()->withInput()->withErrors([
+                    'capital_ratio_pct' => sprintf(
+                        'Capital Allocation (%.2f%%) + Profit Allocation (%.2f%%) must equal 100%%. '
+                        . 'Currently %.2f%%. Please correct the allocation.',
+                        $capPct, $profPct, $capPct + $profPct
+                    ),
+                ]);
             }
 
             $plan->capital_ratio = $capPct / 100;
             $plan->profit_ratio  = $profPct / 100;
         } else {
-            // Defaults for standard plans (not used in reports but kept consistent)
             $plan->capital_ratio = 0.5;
             $plan->profit_ratio  = 0.5;
         }
@@ -91,6 +102,25 @@ class LoanPlanController extends Controller
         $plan->save();
 
         $notify[] = ['success', $message];
+
+        // Capital recovery advisory (spec s.10). A WARNING, not a block —
+        // the administrator's values are saved exactly as entered.
+        if ($plan->usesFixedCapital()) {
+            $recovery = (float) $plan->per_installment * (int) $plan->total_installment;
+
+            if (abs($recovery - 100) > 0.01) {
+                $notify[] = ['warning', sprintf(
+                    'Capital recovery check: %s%% per instalment x %d instalments = %.2f%% of '
+                    . 'original capital (expected 100%%). The borrower is scheduled to repay %s '
+                    . 'than the capital advanced. The plan has been saved as entered.',
+                    rtrim(rtrim(number_format((float) $plan->per_installment, 4), '0'), '.'),
+                    (int) $plan->total_installment,
+                    $recovery,
+                    $recovery > 100 ? 'MORE' : 'LESS'
+                )];
+            }
+        }
+
         return back()->withNotify($notify);
     }
 
@@ -121,6 +151,7 @@ class LoanPlanController extends Controller
             'application_fixed_charge'   => 'required|numeric',
             'application_percent_charge' => 'required|numeric',
             'is_legacy'         => 'required|in:0,1',
+            'calculation_type'  => 'nullable|in:standard,fixed_capital',
             'capital_ratio_pct' => 'nullable|numeric|min:0|max:100',
             'profit_ratio_pct'  => 'nullable|numeric|min:0|max:100',
         ];

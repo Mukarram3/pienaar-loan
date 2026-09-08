@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/Api/LoanController.php
+// =============================================================
 namespace App\Http\Controllers\Api;
 
 use App\Constants\Status;
@@ -179,7 +182,14 @@ class LoanController extends Controller {
         $transaction->remark       = 'application_fee';
         $transaction->save();
 
-        $perInstallment = $amount * $plan->per_installment / 100;
+        // Same calculation engine as the web application flow (spec s.20).
+        // Previously this path stored capital only, with no profit at all.
+        $quote          = $plan->quoteFor((float) $amount);
+        $perInstallment = $quote
+            ? $quote->totalPerInstallment
+            : ((($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount)
+                / $plan->total_installment);
+
         $percentCharge = $plan->per_installment * $plan->percent_charge / 100;
         $charge        = $plan->fixed_charge + $percentCharge;
 
@@ -194,6 +204,13 @@ class LoanController extends Controller {
         $loan->charge_per_installment = $charge;
         $loan->total_installment      = $plan->total_installment;
         $loan->application_form       = $applicationForm;
+
+        if ($quote) {
+            $loan->capital_ratio            = $quote->terms->capitalRatio;
+            $loan->profit_ratio             = $quote->terms->profitRatio;
+            $loan->allocation_ledger_active = true;
+        }
+
         $loan->save();
 
         $adminNotification            = new AdminNotification();

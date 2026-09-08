@@ -1,3 +1,8 @@
+{{--
+    =============================================================
+    File: resources/views/templates/basic/user/loan/form.blade.php
+    =============================================================
+--}}
 @extends($activeTemplate . 'layouts.master')
 @section('content')
     <div class="dashboard-inner">
@@ -12,44 +17,116 @@
                 <div class="card custom--card">
                     <div class="card-body">
                         @php
-                            $total_amount_payable = ($amount * $plan->per_installment / 100) * $plan->total_installment;
+                            $allocator = app(\App\Services\Loan\LoanPaymentAllocator::class);
                         @endphp
+
                         <h5 class="text-center">
                             @lang('Before applying for your loan')
                         </h5>
                         <p class="text-center text--danger">(@lang('Please review your repayments'))</p>
 
-                        <ul class="caption-list-two">
-                            <li>
-                                <span class="caption">@lang('Plan Name')</span>
-                                <span class="value">{{ __($plan->name) }}</span>
-                            </li>
+                        @if($quote)
+                            {{-- Authoritative figures from the calculation engine.
+                                 This block does NOT calculate anything itself (spec s.20). --}}
+                            <ul class="caption-list-two">
+                                <li>
+                                    <span class="caption">@lang('Plan Name')</span>
+                                    <span class="value">{{ __($plan->name) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Loan Amount')</span>
+                                    <span class="value">{{ showAmount($quote->principal) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Repayment Frequency')</span>
+                                    <span class="value">@lang('Every') {{ $quote->installmentIntervalDays }} @lang('days')</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Number of Instalments')</span>
+                                    <span class="value">{{ $quote->totalInstallments }}</span>
+                                </li>
+                            </ul>
 
-                            <li>
-                                <span class="caption">@lang('Loan Amount')</span>
-                                <span class="value">{{ showAmount($amount) }}</span>
-                            </li>
+                            <hr>
 
-                            <li>
-                                <span class="caption">@lang('Total No of Instalments')</span>
-                                <span class="value">{{ $plan->total_installment }}</span>
-                            </li>
+                            <ul class="caption-list-two">
+                                <li class="fw-bold">
+                                    <span class="caption">@lang('Instalment')</span>
+                                    <span class="value text--danger fw-bold">
+                                        {{ showAmount($quote->totalPerInstallment) }}
+                                    </span>
+                                </li>
+                                <li>
+                                    <span class="caption ps-3">@lang('Capital Component')</span>
+                                    <span class="value">{{ showAmount($quote->capitalPerInstallment) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption ps-3">@lang('Profit Component')</span>
+                                    <span class="value">{{ showAmount($quote->profitPerInstallment) }}</span>
+                                </li>
+                            </ul>
 
-                            @php $perIntallment = $amount * $plan->per_installment / 100; @endphp
+                            <hr>
 
-                            <li>
-                                <span class="caption">@lang('Per Instalment')</span>
-                                <span
-                                    class="value">{{ showAmount($total_amount_payable/$plan->total_installment) }}</span>
-                            </li>
+                            <ul class="caption-list-two">
+                                <li>
+                                    <span class="caption">@lang('Total Capital Repayable')</span>
+                                    <span class="value">{{ showAmount($quote->totalCapitalRepayable) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Total Profit over Full Term')</span>
+                                    <span class="value">{{ showAmount($quote->totalProfitOverTerm) }}</span>
+                                </li>
+                                <li class="fw-bold text--danger">
+                                    <span class="caption">@lang('Total Contractual Repayment')</span>
+                                    <span class="value">
+                                        {{ showAmount($quote->totalContractualRepayment) }}<br>
+                                        <small class="fw-normal">
+                                            ({{ showAmount($quote->totalPerInstallment) }}
+                                            @lang('every') {{ $quote->installmentIntervalDays }} @lang('days'))
+                                        </small>
+                                    </span>
+                                </li>
+                            </ul>
 
-                            <li class="fw-bold text--danger">
-                                <span class="caption">@lang('You\'ll Need To Pay')</span>
-                                <span class="value">
-                                                {{ showAmount($total_amount_payable) }} <br>
-                                                ( {{ showAmount($total_amount_payable/$plan->total_installment) }} every {{ $plan->installment_interval }} days )</span>
-                            </li>
-                        </ul>
+                            <small class="d-block mt-3 text-muted">
+                                @lang('Each payment received is allocated')
+                                {{ $allocator->pct($quote->terms->capitalRatio) }}%
+                                @lang('towards the outstanding Capital Sum and')
+                                {{ $allocator->pct($quote->terms->profitRatio) }}%
+                                @lang('towards profit due under the Loan.')
+                            </small>
+                        @else
+                            @php
+                                $total_amount_payable = ($amount * $plan->per_installment / 100 * $plan->total_installment) + $amount;
+                            @endphp
+                            <ul class="caption-list-two">
+                                <li>
+                                    <span class="caption">@lang('Plan Name')</span>
+                                    <span class="value">{{ __($plan->name) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Loan Amount')</span>
+                                    <span class="value">{{ showAmount($amount) }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Total No of Instalments')</span>
+                                    <span class="value">{{ $plan->total_installment }}</span>
+                                </li>
+                                <li>
+                                    <span class="caption">@lang('Per Instalment')</span>
+                                    <span class="value">{{ showAmount($total_amount_payable / $plan->total_installment) }}</span>
+                                </li>
+                                <li class="fw-bold text--danger">
+                                    <span class="caption">@lang('You\'ll Need To Pay')</span>
+                                    <span class="value">
+                                        {{ showAmount($total_amount_payable) }} <br>
+                                        ( {{ showAmount($total_amount_payable / $plan->total_installment) }}
+                                        @lang('every') {{ $plan->installment_interval }} @lang('days') )
+                                    </span>
+                                </li>
+                            </ul>
+                        @endif
 
                         <p class="px-2">
                             @if ($plan->delay_value && getAmount($plan->delay_charge))
@@ -57,8 +134,7 @@
                                     @lang('If an instalment is delayed for')
                                     <span
                                         class="fw-bold">{{ $plan->delay_value }}</span> @lang('or more days then, an amount of')
-                                    ,
-                                    <span class="fw-bold">{{ ($plan->percent_charge/100) * $amount }}</span>
+                                    <span class="fw-bold">{{ showAmount(($plan->percent_charge / 100) * $amount) }}</span>
                                     @lang('will be applied for each day.')
                                 </small>
                             @endif
