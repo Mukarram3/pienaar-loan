@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/CronController.php
+// =============================================================
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
@@ -143,6 +146,29 @@ class CronController extends Controller
                     $transaction->remark       = 'loan_installment';
                     $transaction->trx          = $loan->loan_number;
                     $transaction->save();
+
+                    // Post the receipt to the capital/profit allocation ledger.
+                    // Scoped to loans that have the ledger switched on, so
+                    // pre-existing loans are untouched (spec s.21).
+                    // $charge is the late fee: passed separately so it is
+                    // never allocated to capital or profit (spec s.16).
+                    if ($loan->allocation_ledger_active) {
+                        try {
+                            app(\App\Services\Loan\LoanPaymentAllocator::class)->record(
+                                loan:            $loan,
+                                amountReceived:  $amount,
+                                scheduledAmount: (float) $loan->per_installment,
+                                lateFeePortion:  (float) $charge,
+                                source:          \App\Services\Loan\LoanPaymentAllocator::SOURCE_SCHEDULED,
+                                installment:     $installment
+                            );
+                        } catch (\Throwable $e) {
+                            // Never let a ledger write break the payment run.
+                            \Illuminate\Support\Facades\Log::error(
+                                'Allocation ledger write failed for loan ' . $loan->id . ': ' . $e->getMessage()
+                            );
+                        }
+                    }
                 }
             }
         } catch (\Throwable $th) {

@@ -13,6 +13,7 @@ use App\Models\LoanDocument;
 use App\Models\LoanPlan;
 use App\Models\User;
 use App\Services\Loan\LoanAgreementGenerator;
+use App\Services\Loan\LoanPaymentAllocator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -110,6 +111,11 @@ class LegacyLoanController extends Controller
                 (object)['name' => 'admin_notes',            'type' => 'text', 'value' => $validated['notes'] ?? null],
             ];
 
+            // Freeze the contracted capital/profit allocation onto the loan so a
+            // later plan edit cannot re-split this loan (spec s.21).
+            $loan->capital_ratio = (float) $plan->capital_ratio;
+            $loan->profit_ratio  = (float) $plan->profit_ratio;
+
             $loan->status      = $status;
             $loan->approved_by = auth('admin')->id();
             $loan->reviewed_by = auth('admin')->id();
@@ -120,6 +126,16 @@ class LegacyLoanController extends Controller
 
             // Generate installments — uses next_installment_date if provided
             $this->generateLegacyInstallments($loan, $validated['next_installment_date'] ?? null);
+
+            // Open the capital/profit allocation ledger and record the split of
+            // what the borrower had already repaid before import. This states
+            // the composition of an existing balance; it does not change it.
+            app(LoanPaymentAllocator::class)->seedOpeningBalance(
+                $loan,
+                $validated['installments_paid'] > 0
+                    ? $validated['installment_amount'] * $validated['installments_paid']
+                    : 0.0
+            );
 
             if ($request->hasFile('original_agreement')) {
                 $this->storeDocument($loan, $request->file('original_agreement'), 'original_agreement');

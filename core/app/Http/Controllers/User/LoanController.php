@@ -242,6 +242,27 @@ class LoanController extends Controller {
         $user->balance = auth()->user()->balance - ($loan->per_installment + $installment->delay_charge);
         $user->save();
 
+        // Post the receipt to the capital/profit allocation ledger.
+        // Only for loans with the ledger switched on (spec s.21). The delay
+        // charge is passed separately and is never allocated to capital or
+        // profit (spec s.16).
+        if ($loan->allocation_ledger_active) {
+            try {
+                app(\App\Services\Loan\LoanPaymentAllocator::class)->record(
+                    loan:            $loan,
+                    amountReceived:  (float) $loan->per_installment + (float) $installment->delay_charge,
+                    scheduledAmount: (float) $loan->per_installment,
+                    lateFeePortion:  (float) $installment->delay_charge,
+                    source:          \App\Services\Loan\LoanPaymentAllocator::SOURCE_SCHEDULED,
+                    installment:     $installment
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error(
+                    'Allocation ledger write failed for loan ' . $loan->id . ': ' . $e->getMessage()
+                );
+            }
+        }
+
         $shortCodes = $loan->shortCodes();
         $shortCodes['due_date'] = showDateTime($installment->installment_date, 'd M Y');
         $shortCodes['amount'] = showAmount($loan->per_installment + $installment->delay_charge,currencyFormat:false);

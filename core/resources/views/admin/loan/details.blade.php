@@ -383,6 +383,153 @@
         </div>
     </div>
 
+    {{-- CAPITAL / PROFIT ALLOCATION LEDGER (legacy loans) --}}
+    @if($loan->is_legacy && $loan->capital_profit_allocation)
+        @php
+            $alloc     = $loan->capital_profit_allocation;
+            $allocator = app(\App\Services\Loan\LoanPaymentAllocator::class);
+            $capPct    = $allocator->pct($alloc['capital_ratio']);
+            $proPct    = $allocator->pct($alloc['profit_ratio']);
+        @endphp
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card box--shadow1">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
+                            <h5 class="card-title mb-0">
+                                @lang('Capital &amp; Interest Allocation')
+                                @if($alloc['from_ledger'])
+                                    <span class="badge bg-success ms-1" style="font-size:9px;">LEDGER ACTIVE</span>
+                                @else
+                                    <span class="badge bg-secondary ms-1" style="font-size:9px;">DERIVED</span>
+                                @endif
+                            </h5>
+                            <span class="text-muted" style="font-size:12px;">
+                                {{ $capPct }}% @lang('Capital') / {{ $proPct }}% @lang('Interest')
+                            </span>
+                        </div>
+
+                        <p class="text-muted mb-3" style="font-size:12px;">
+                            @lang('Each payment received is allocated'){{ ' ' }}{{ $capPct }}%
+                            @lang('towards the outstanding Capital Sum and'){{ ' ' }}{{ $proPct }}%
+                            @lang('towards interest due under the Loan. Late payment charges are held separately and are not applied to either.')
+                            @unless($alloc['from_ledger'])
+                                <br><em>@lang('This loan predates the allocation ledger, so the split shown is derived pro-rata rather than built from recorded receipts.')</em>
+                            @endunless
+                        </p>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text--primary mb-2">@lang('Capital Sum')</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item px-0">
+                                            <span>@lang('Total Capital Repayable')</span>
+                                            <span class="fw-bold">{{ showAmount($alloc['total_capital']) }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0">
+                                            <span>@lang('Capital Repaid')</span>
+                                            <span class="text--success">{{ showAmount($alloc['capital_repaid']) }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0">
+                                            <span class="fw-bold">@lang('Outstanding Capital')</span>
+                                            <span class="fw-bold text--danger">{{ showAmount($alloc['capital_outstanding']) }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100">
+                                    <h6 class="text--warning mb-2">@lang('Interest / Profit')</h6>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item px-0">
+                                            <span>@lang('Total Interest over Term')</span>
+                                            <span class="fw-bold">{{ showAmount($alloc['total_profit']) }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0">
+                                            <span>@lang('Interest Received')</span>
+                                            <span class="text--success">{{ showAmount($alloc['profit_received']) }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0">
+                                            <span class="fw-bold">@lang('Outstanding Interest')</span>
+                                            <span class="fw-bold text--danger">{{ showAmount($alloc['profit_outstanding']) }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($alloc['late_fees_paid'] > 0 || $alloc['unallocated_credit'] > 0)
+                            <div class="row g-3 mt-1">
+                                @if($alloc['late_fees_paid'] > 0)
+                                    <div class="col-md-6">
+                                        <div class="alert alert-secondary mb-0 py-2" style="font-size:13px;">
+                                            <strong>@lang('Late Charges Received'):</strong>
+                                            {{ showAmount($alloc['late_fees_paid']) }}
+                                            <br><small>@lang('Held on a separate ledger. Not applied to capital or interest.')</small>
+                                        </div>
+                                    </div>
+                                @endif
+                                @if($alloc['unallocated_credit'] > 0)
+                                    <div class="col-md-6">
+                                        <div class="alert alert-warning mb-0 py-2" style="font-size:13px;">
+                                            <strong>@lang('Unallocated Credit'):</strong>
+                                            {{ showAmount($alloc['unallocated_credit']) }}
+                                            <br><small>@lang('Overpayment held pending allocation policy. Not applied to capital or interest.')</small>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        {{-- Allocation entries --}}
+                        @php $entries = $loan->paymentAllocations()->limit(15)->get(); @endphp
+                        @if($entries->count())
+                            <h6 class="mt-4 mb-2">@lang('Allocation History')</h6>
+                            <div class="table-responsive">
+                                <table class="table table--light style--two">
+                                    <thead>
+                                    <tr>
+                                        <th>@lang('Date')</th>
+                                        <th>@lang('Source')</th>
+                                        <th>@lang('Received')</th>
+                                        <th>@lang('Capital')</th>
+                                        <th>@lang('Interest')</th>
+                                        <th>@lang('Late Fee')</th>
+                                        <th>@lang('Capital O/S')</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($entries as $entry)
+                                        <tr>
+                                            <td>{{ optional($entry->value_date)->format('d M Y') ?? $entry->created_at->format('d M Y') }}</td>
+                                            <td>
+                                                {{ $entry->sourceLabel() }}
+                                                @if($entry->is_partial)
+                                                    <span class="badge bg-warning ms-1" style="font-size:9px;">PARTIAL</span>
+                                                @endif
+                                                @if($entry->is_overpayment)
+                                                    <span class="badge bg-info ms-1" style="font-size:9px;">OVERPAID</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ showAmount($entry->amount_received) }}</td>
+                                            <td class="text--primary">{{ showAmount($entry->capital_allocated) }}</td>
+                                            <td class="text--warning">{{ showAmount($entry->profit_allocated) }}</td>
+                                            <td>{{ showAmount($entry->late_fee_portion) }}</td>
+                                            <td>{{ showAmount($entry->capital_outstanding_after) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- LOAN DOCUMENTS (full width) --}}
     <div class="row mt-4">
         <div class="col-12">

@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Models/Loan.php
+// =============================================================
 namespace App\Models;
 
 use App\Constants\Status;
@@ -168,6 +171,22 @@ class Loan extends Model
         });
     }
 
+    public function paymentAllocations()
+    {
+        return $this->hasMany(LoanPaymentAllocation::class)->latest('id');
+    }
+
+    /**
+     * Capital / profit position for this loan.
+     *
+     * Once the allocation ledger is active for a loan, these figures come from
+     * the ledger — real separate balances built from actual receipts. Loans
+     * predating the ledger keep the previous pro-rata derivation, so nothing
+     * on screen changes for them (spec s.21).
+     *
+     * The ratio is taken from the loan's contracted snapshot in preference to
+     * the plan, so editing a plan can no longer re-split historic loans.
+     */
     public function capitalProfitAllocation(): Attribute
     {
         return Attribute::make(get: function () {
@@ -175,27 +194,7 @@ class Loan extends Model
                 return null;
             }
 
-            $capitalRatio = $this->plan ? (float) $this->plan->capital_ratio : 0.5;
-            $profitRatio  = $this->plan ? (float) $this->plan->profit_ratio  : 0.5;
-
-            // Safety: ensure sum is sensible
-            if ($capitalRatio + $profitRatio == 0) {
-                $capitalRatio = $profitRatio = 0.5;
-            }
-
-            $payable = (float) $this->payable_amount;
-            $paid    = (float) $this->paid_amount;
-
-            return [
-                'total_capital'        => $payable * $capitalRatio,
-                'total_profit'         => $payable * $profitRatio,
-                'capital_repaid'       => $paid * $capitalRatio,
-                'profit_received'      => $paid * $profitRatio,
-                'capital_outstanding'  => max(0, ($payable - $paid) * $capitalRatio),
-                'profit_outstanding'   => max(0, ($payable - $paid) * $profitRatio),
-                'capital_ratio'        => $capitalRatio,
-                'profit_ratio'         => $profitRatio,
-            ];
+            return app(\App\Services\Loan\LoanPaymentAllocator::class)->summary($this);
         });
     }
 
