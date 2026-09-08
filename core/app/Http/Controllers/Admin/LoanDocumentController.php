@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/Admin/LoanDocumentController.php
+// =============================================================
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -16,7 +19,7 @@ class LoanDocumentController extends Controller
 
         $request->validate([
             'document'      => 'required|file|max:10240',
-            'document_type' => 'required|in:original_agreement,supporting,other',
+            'document_type' => 'required|in:original_agreement,reissued_agreement,signed_reissued_agreement,supporting,other',
         ]);
 
         $file = $request->file('document');

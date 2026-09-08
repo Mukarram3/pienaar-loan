@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/Admin/LegacyLoanController.php
+// =============================================================
 namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
@@ -9,6 +12,7 @@ use App\Models\Loan;
 use App\Models\LoanDocument;
 use App\Models\LoanPlan;
 use App\Models\User;
+use App\Services\Loan\LoanAgreementGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -179,6 +183,56 @@ class LegacyLoanController extends Controller
     /**
      * Persist an uploaded document.
      */
+    /**
+     * Generate and download a fresh Commercial Loan Agreement for an imported
+     * legacy loan.
+     *
+     * A legacy loan is already advanced and already has a signed original
+     * agreement. This produces a NEW agreement on current PienaarBank terms for
+     * the borrower to sign IN ADDITION to the original. The original is never
+     * replaced, superseded or altered.
+     *
+     * Every re-issue is:
+     *   - given a unique reference (AGR-XXXXXX-L{loan}-V{n})
+     *   - filed against the loan as a document of type 'reissued_agreement'
+     *   - left in place; generating a new version does not delete the previous
+     *
+     * No loan figures are recalculated. The agreement renders the stored
+     * contractual values captured at import.
+     */
+    public function downloadAgreement($id, LoanAgreementGenerator $generator)
+    {
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+
+        if (!$loan->is_legacy) {
+            $notify[] = ['error', 'Agreement re-issue is only available for imported legacy loans.'];
+            return redirect()->route('admin.loan.details', $loan->id)->withNotify($notify);
+        }
+
+        if (!$loan->user) {
+            $notify[] = ['error', 'This loan has no borrower record attached.'];
+            return redirect()->route('admin.loan.details', $loan->id)->withNotify($notify);
+        }
+
+        if (!$loan->plan) {
+            $notify[] = ['error', 'This loan has no plan record attached.'];
+            return redirect()->route('admin.loan.details', $loan->id)->withNotify($notify);
+        }
+
+        try {
+            $result = $generator->reissueForLegacyLoan($loan);
+        } catch (\Throwable $e) {
+            $notify[] = ['error', 'Could not generate the agreement: ' . $e->getMessage()];
+            return redirect()->route('admin.loan.details', $loan->id)->withNotify($notify);
+        }
+
+        return response()
+            ->download($result['path'], basename($result['path']), [
+                'Content-Type' => 'application/pdf',
+            ])
+            ->deleteFileAfterSend(false);
+    }
+
     protected function storeDocument(Loan $loan, $file, string $documentType): LoanDocument
     {
         $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());

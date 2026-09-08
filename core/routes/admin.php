@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: routes/admin.php
+// =============================================================
 use Illuminate\Support\Facades\Route;
 
 
@@ -99,6 +102,7 @@ Route::middleware('admin')->group(function () {
             Route::post('store', 'store')->name('store');
             Route::get('edit/{id}', 'edit')->name('edit');
             Route::post('update/{id}', 'update')->name('update');
+            Route::get('agreement/{id}', 'downloadAgreement')->name('agreement.download');
         });
 
         Route::name('documents.')->prefix('documents')->controller('LoanDocumentController')->group(function () {

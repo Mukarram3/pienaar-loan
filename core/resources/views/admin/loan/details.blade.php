@@ -1,5 +1,48 @@
+{{--
+    =============================================================
+    File: resources/views/admin/loan/details.blade.php
+    =============================================================
+--}}
 @extends('admin.layouts.app')
 @section('panel')
+
+    {{-- LEGACY LOAN — NEW AGREEMENT PROMPT
+         A legacy loan is already advanced and already has a signed original
+         agreement. Company policy requires the borrower to also sign a fresh
+         agreement on current terms. This banner surfaces that action instead of
+         leaving it buried in the Reports dropdown. --}}
+    @if($loan->is_legacy)
+        @php
+            $reissued = $loan->documents->where('document_type', 'reissued_agreement');
+        @endphp
+        <div class="alert {{ $reissued->count() ? 'alert-success' : 'alert-warning' }} d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div class="me-3">
+                <h6 class="mb-1">
+                    <i class="fas fa-file-signature"></i>
+                    @lang('Imported Legacy Loan')
+                </h6>
+                <p class="mb-0" style="font-size:13px;">
+                    @if($reissued->count())
+                        @lang('A new agreement has been issued') ({{ $reissued->count() }}
+                        @lang('version(s)')). @lang('The borrower must sign it in addition to their original agreement.')
+                        @if($loan->original_agreement_ref)
+                            <br><small>@lang('Original agreement reference'): <strong>{{ $loan->original_agreement_ref }}</strong></small>
+                        @endif
+                    @else
+                        @lang('No new agreement has been issued yet. Generate one for the borrower to sign in addition to their original agreement.')
+                    @endif
+                </p>
+            </div>
+            <div class="mt-2 mt-md-0">
+                <a href="{{ route('admin.loan.legacy.agreement.download', $loan->id) }}"
+                   class="btn btn--primary">
+                    <i class="fas fa-download"></i>
+                    {{ $reissued->count() ? __('Download New Agreement Again') : __('Download New Agreement') }}
+                </a>
+            </div>
+        </div>
+    @endif
+
     <div class="row gy-4">
         <div class="col-xl-4 mb-30">
             <div class="card overflow-hidden box--shadow1">
@@ -291,6 +334,29 @@
                                         </a>
                                     </li>
 
+                                    {{-- RE-ISSUED AGREEMENT — legacy loans only.
+                                         Generates a NEW agreement for the borrower to sign
+                                         in addition to their original. Does not replace it. --}}
+                                    @if($loan->is_legacy)
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{{ route('admin.loan.legacy.agreement.download', $loan->id) }}">
+                                                <i class="fas fa-file-signature text--success"></i>
+                                                @lang('Download New Agreement')
+                                                @php
+                                                    $reissueCount = $loan->documents
+                                                        ->where('document_type', 'reissued_agreement')
+                                                        ->count();
+                                                @endphp
+                                                @if($reissueCount)
+                                                    <span class="badge bg-secondary ms-1" style="font-size:9px;">
+                                                        v{{ $reissueCount }} issued
+                                                    </span>
+                                                @endif
+                                            </a>
+                                        </li>
+                                    @endif
+
                                     @if ($loan->signed_agreement)
                                         <li>
                                             <a class="dropdown-item"
@@ -353,6 +419,10 @@
                                         <td>
                                             @if ($doc->document_type == 'original_agreement')
                                                 <span class="badge bg-primary">Original Agreement</span>
+                                            @elseif ($doc->document_type == 'reissued_agreement')
+                                                <span class="badge bg-success">New Agreement (Issued)</span>
+                                            @elseif ($doc->document_type == 'signed_reissued_agreement')
+                                                <span class="badge bg-dark">New Agreement (Signed)</span>
                                             @elseif ($doc->document_type == 'supporting')
                                                 <span class="badge bg-secondary">Supporting</span>
                                             @else
@@ -407,6 +477,7 @@
                             <label>@lang('Document Type')</label>
                             <select name="document_type" class="form-control" required>
                                 <option value="original_agreement">Original Loan Agreement</option>
+                                <option value="signed_reissued_agreement">New Agreement &mdash; Signed by Borrower</option>
                                 <option value="supporting">Supporting Document</option>
                                 <option value="other">Other</option>
                             </select>

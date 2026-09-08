@@ -1,5 +1,8 @@
 <?php
 
+// =============================================================
+// File: app/Http/Controllers/User/LoanController.php
+// =============================================================
 namespace App\Http\Controllers\User;
 
 use App\Constants\Status;
@@ -10,6 +13,7 @@ use App\Models\AdminNotification;
 use App\Models\Category;
 use App\Models\Installment;
 use App\Models\Loan;
+use App\Services\Loan\LoanAgreementGenerator;
 use App\Models\LoanPlan;
 use App\Models\Transaction;
 use App\Models\User;
@@ -193,108 +197,20 @@ class LoanController extends Controller {
         return to_route('user.loan.list')->withNotify($notify);
     }
 
+    /**
+     * Generate the Pre-Loan Advice / Pre-Agreement Statement.
+     *
+     * Delegates to LoanAgreementGenerator (spec s.20). Signature kept so
+     * existing callers are unchanged. Output is unchanged.
+     */
     public function generateLoanPdf($user, $loan, $plan)
     {
-        $pdf = new TCPDF();
-        $pdf->SetCreator('Your App');
-        $pdf->SetAuthor('Your App');
-        $pdf->SetTitle('Loan Pre-Agreement Statement');
-        $pdf->SetFont('dejavusans', '', 10);
-        $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
-        $pdf->setPrintHeader(false);
-        $pdf->setPrintFooter(false);
-
-        $pdf->setFontSubsetting(true);
-        $pdf->SetMargins(10, 10, 10);
-        $pdf->AddPage();
-
-        $templatePath = dirname(base_path()) . '/assets/loan/PRE-LOAN-ADVICE-PRE-AGREEMENT-STATEMENT.blade.php';
-        $template = file_get_contents($templatePath);
-
-        $logoPath = dirname(base_path()) . '/assets/images/logo_icon/logo.png';
-        $template = str_replace('{{logo}}', $logoPath, $template);
-
-        // Replace dynamic values
-        $template = str_replace(
-            [
-                '{{first_name}}',
-                '{{last_name}}',
-                '{{email}}',
-                '{{mobile}}',
-                '{{address}}',
-                '{{city}}',
-                '{{state}}',
-                '{{zip}}',
-                '{{country}}',
-
-                '{{loan_number}}',
-                '{{plan_name}}',
-                '{{amount}}',
-                '{{total_installment}}',
-                '{{installment_interval}}',
-                '{{per_installment}}',
-                '{{profit_percentage}}',
-                '{{application_fixed_charge}}',
-                '{{application_percent_charge}}',
-
-//                '{{bank_name}}',
-//                '{{bank_account}}',
-//                '{{branch_code}}',
-
-                '{{delay}}',
-                '{{fixed_charge}}',
-                '{{percent_charge}}',
-                '{{site_currency}}'
-            ],
-            [
-                $user->firstname,
-                $user->lastname,
-                $user->email,
-                $user->mobile,
-                $user->address,
-                $user->city,
-                $user->state,
-                $user->zip,
-                $user->country_name,
-
-                $loan->loan_number,
-                $plan->name,
-                number_format($loan->amount, 2, '.', ''),
-                $loan->total_installment,
-                $plan->installment_interval,
-                number_format($loan->per_installment, 2, '.', ''),
-                $plan->per_installment,
-                number_format($plan->application_fixed_charge, 2, '.', ''),
-                ($plan->application_percent_charge/100) * $loan->amount,
-
-//                $user->bank_name,
-//                $user->bank_account,
-//                $user->branch_code,
-
-                $loan->delay_value,
-                number_format($plan->fixed_charge, 2, '.', ''),
-                $plan->percent_charge,
-                config('app.currency', 'ZAR')
-            ],
-            $template
+        return app(LoanAgreementGenerator::class)->generate(
+            $user,
+            $loan,
+            $plan,
+            LoanAgreementGenerator::CONTEXT_APPLICATION
         );
-
-
-        $pdf->writeHTML($template, true, false, true, false, '');
-
-        // ✅ Save PDF
-        $directory = storage_path('app/loan_pdfs');
-
-        if (!file_exists($directory)) {
-            mkdir($directory, 0755, true);
-        }
-
-        $fileName = 'pre_' . $loan->loan_number . '.pdf';
-        $filePath = $directory . '/' . $fileName;
-
-        $pdf->Output($filePath, 'F');
-
-        return $filePath;
     }
 
     public function installments($loanNumber) {
