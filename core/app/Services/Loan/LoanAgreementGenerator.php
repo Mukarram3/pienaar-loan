@@ -268,6 +268,22 @@ class LoanAgreementGenerator
         $replacements['{{installments_paid}}']        = (int) $loan->given_installment;
         $replacements['{{installments_remaining}}']   = max(0, $count - (int) $loan->given_installment);
 
+        // --- Payment allocation clause -----------------------------------
+        // Rendered from the loan's CONTRACTED ratio, not a hard-coded 50/50,
+        // so a plan on a different allocation produces a correct agreement.
+        $allocator = app(LoanPaymentAllocator::class);
+        $ratio     = $allocator->ratioFor($loan);
+
+        $replacements['{{allocation_clause}}']       = $allocator->clauseText($loan);
+        $replacements['{{capital_allocation_pct}}']  = $allocator->pct($ratio['capital']);
+        $replacements['{{profit_allocation_pct}}']   = $allocator->pct($ratio['profit']);
+        $replacements['{{capital_per_installment}}'] = number_format(
+            round($perInstallment * $ratio['capital'], 2), 2, '.', ''
+        );
+        $replacements['{{profit_per_installment}}']  = number_format(
+            round($perInstallment - round($perInstallment * $ratio['capital'], 2), 2), 2, '.', ''
+        );
+
         return $replacements;
     }
 
