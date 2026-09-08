@@ -343,30 +343,13 @@
     </tr>
 </table>
 
-<h4>3.2 Total Amount Repayable</h4>
-
-<table class="info-table">
-    <tr>
-        <td class="label">Total Capital Repayable</td>
-        <td>R{{total_capital}}</td>
-    </tr>
-    <tr>
-        <td class="label">Total Profit over Term</td>
-        <td>R{{total_profit}} &nbsp;({{profit_pct_of_principal}}% of the Capital Sum advanced)</td>
-    </tr>
-    <tr>
-        <td class="label">Total Contractual Repayment</td>
-        <td><strong>R{{total_repayable}}</strong></td>
-    </tr>
-</table>
-
-<h4>3.3 Application Fee</h4>
+<h4>3.2 Application Fee</h4>
 
 <div class="bullet-item"><strong>• Application Fee:</strong> R{{application_fee}}</div>
 
-<p>The application fee is separate from, and is not included in, the Total Contractual
-Repayment stated in clause 3.2. It is deducted from the Borrower's PienaarBank account
-balance and is not added to the loan repayment balance.</p>
+<p>The application fee is separate from the instalments set out in clause 3.1 and does
+not form part of the Borrower's loan repayment obligation. It is deducted from the
+Borrower's PienaarBank account balance and is not added to the loan repayment balance.</p>
 
 <p style="margin-top: 10px;">A detailed payment schedule is available in the Borrower's PienaarBank online portal.</p>
 
