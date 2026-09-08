@@ -207,6 +207,62 @@ class LoanAgreementGenerator
             '{{fixed_charge}}'   => number_format((float) $plan->fixed_charge, 2, '.', ''),
             '{{percent_charge}}' => $plan->percent_charge,
             '{{site_currency}}'  => config('app.currency', 'ZAR'),
+        ] + $this->commercialTokens($loan, $plan, false);
+    }
+
+    /**
+     * Commercial disclosure tokens shared by both paths.
+     *
+     * These exist so the agreement can state the capital/profit split, the
+     * total contractual repayment and the allocation clause instead of a bare
+     * "Percentage Charge" figure that no borrower can interpret (spec s.17, s.18).
+     *
+     * Nothing here is recalculated from the plan. Every figure is derived from
+     * the loan's own stored values, so an agreement re-generated for an
+     * existing loan states that loan's contracted terms (spec s.21).
+     */
+    private function commercialTokens(Loan $loan, LoanPlan $plan, bool $legacy): array
+    {
+        $allocator = app(LoanPaymentAllocator::class);
+        $ratio     = $allocator->ratioFor($loan);
+
+        $principal      = (float) $loan->amount;
+        $perInstallment = (float) $loan->per_installment;
+        $count          = (int) $loan->total_installment;
+
+        // Legacy: the administrator-entered total repayable is authoritative.
+        $totalRepayable = ($legacy && $loan->total_repayable_override)
+            ? (float) $loan->total_repayable_override
+            : $perInstallment * $count;
+
+        $totalProfit  = max(0.0, $totalRepayable - $principal);
+        $totalCapital = $totalRepayable - $totalProfit;
+
+        $capitalPer = round($perInstallment * $ratio['capital'], 2);
+        $profitPer  = round($perInstallment - $capitalPer, 2);
+
+        // A legacy borrower already holds the advance, so no new application
+        // fee is payable. Charging one here would be a double charge (spec s.15).
+        $applicationFee = $legacy
+            ? 0.0
+            : (float) $plan->application_fixed_charge
+              + ((float) $plan->application_percent_charge / 100) * $principal;
+
+        $money = fn (float $v): string => number_format($v, 2, '.', '');
+
+        return [
+            '{{total_repayable}}'          => $money($totalRepayable),
+            '{{total_profit}}'             => $money($totalProfit),
+            '{{total_capital}}'            => $money($totalCapital),
+            '{{capital_per_installment}}'  => $money($capitalPer),
+            '{{profit_per_installment}}'   => $money($profitPer),
+            '{{capital_allocation_pct}}'   => $allocator->pct($ratio['capital']),
+            '{{profit_allocation_pct}}'    => $allocator->pct($ratio['profit']),
+            '{{allocation_clause}}'        => $allocator->clauseText($loan),
+            '{{application_fee}}'          => $money($applicationFee),
+            '{{profit_pct_of_principal}}'  => $principal > 0
+                ? number_format(($totalProfit / $principal) * 100, 2, '.', '')
+                : '0.00',
         ];
     }
 
@@ -268,21 +324,12 @@ class LoanAgreementGenerator
         $replacements['{{installments_paid}}']        = (int) $loan->given_installment;
         $replacements['{{installments_remaining}}']   = max(0, $count - (int) $loan->given_installment);
 
-        // --- Payment allocation clause -----------------------------------
-        // Rendered from the loan's CONTRACTED ratio, not a hard-coded 50/50,
-        // so a plan on a different allocation produces a correct agreement.
-        $allocator = app(LoanPaymentAllocator::class);
-        $ratio     = $allocator->ratioFor($loan);
-
-        $replacements['{{allocation_clause}}']       = $allocator->clauseText($loan);
-        $replacements['{{capital_allocation_pct}}']  = $allocator->pct($ratio['capital']);
-        $replacements['{{profit_allocation_pct}}']   = $allocator->pct($ratio['profit']);
-        $replacements['{{capital_per_installment}}'] = number_format(
-            round($perInstallment * $ratio['capital'], 2), 2, '.', ''
-        );
-        $replacements['{{profit_per_installment}}']  = number_format(
-            round($perInstallment - round($perInstallment * $ratio['capital'], 2), 2), 2, '.', ''
-        );
+        // Commercial disclosure tokens, recomputed on the legacy basis so the
+        // administrator-entered total repayable is authoritative.
+        $replacements = $replacements + [];
+        foreach ($this->commercialTokens($loan, $plan, true) as $k => $v) {
+            $replacements[$k] = $v;
+        }
 
         return $replacements;
     }

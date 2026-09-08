@@ -321,13 +321,52 @@
 <!-- 3. LOAN TERMS -->
 <div class="section-title">3. LOAN TERMS</div>
 
-<div class="bullet-item"><strong>• Loan Amount:</strong> R{{amount}}</div>
+<div class="bullet-item"><strong>• Loan Amount (Capital Sum Advanced):</strong> R{{amount}}</div>
 <div class="bullet-item"><strong>• Loan Product / Plan:</strong> {{plan_name}}</div>
-<div class="bullet-item"><strong>• Total Instalments:</strong> {{total_installment}}</div>
 <div class="bullet-item"><strong>• Repayment Interval:</strong> Every {{installment_interval}} Days</div>
-<div class="bullet-item"><strong>• Instalment Amount:</strong> R{{per_installment}}</div>
-<div class="bullet-item"><strong>• Percentage Charge:</strong> {{profit_percentage}}%</div>
-<div class="bullet-item"><strong>• Application Fixed Charge:</strong> R{{application_percent_charge}}</div>
+<div class="bullet-item"><strong>• Number of Instalments:</strong> {{total_installment}}</div>
+
+<h4>3.1 Instalment Breakdown</h4>
+
+<table class="info-table">
+    <tr>
+        <td class="label">Instalment Amount</td>
+        <td><strong>R{{per_installment}}</strong> payable every {{installment_interval}} days</td>
+    </tr>
+    <tr>
+        <td class="label">&nbsp;&nbsp;&nbsp;Capital Component</td>
+        <td>R{{capital_per_installment}} &nbsp;({{capital_allocation_pct}}% of each instalment)</td>
+    </tr>
+    <tr>
+        <td class="label">&nbsp;&nbsp;&nbsp;Profit Component</td>
+        <td>R{{profit_per_installment}} &nbsp;({{profit_allocation_pct}}% of each instalment)</td>
+    </tr>
+</table>
+
+<h4>3.2 Total Amount Repayable</h4>
+
+<table class="info-table">
+    <tr>
+        <td class="label">Total Capital Repayable</td>
+        <td>R{{total_capital}}</td>
+    </tr>
+    <tr>
+        <td class="label">Total Profit over Term</td>
+        <td>R{{total_profit}} &nbsp;({{profit_pct_of_principal}}% of the Capital Sum advanced)</td>
+    </tr>
+    <tr>
+        <td class="label">Total Contractual Repayment</td>
+        <td><strong>R{{total_repayable}}</strong></td>
+    </tr>
+</table>
+
+<h4>3.3 Application Fee</h4>
+
+<div class="bullet-item"><strong>• Application Fee:</strong> R{{application_fee}}</div>
+
+<p>The application fee is separate from, and is not included in, the Total Contractual
+Repayment stated in clause 3.2. It is deducted from the Borrower's PienaarBank account
+balance and is not added to the loan repayment balance.</p>
 
 <p style="margin-top: 10px;">A detailed payment schedule is available in the Borrower's PienaarBank online portal.</p>
 
@@ -388,7 +427,15 @@
 
 <p><strong>5.4</strong> Early settlement is allowed at any time without penalty.</p>
 
-<p><strong>5.5</strong> Instalments consist of capital, profit, and charges in accordance with the loan plan settings.</p>
+<p><strong>5.5</strong> <strong>Allocation of Payments.</strong> {{allocation_clause}}</p>
+
+<p><strong>5.6</strong> For the avoidance of doubt, each instalment of <strong>R{{per_installment}}</strong>
+comprises <strong>R{{capital_per_installment}}</strong> in respect of the Capital Sum and
+<strong>R{{profit_per_installment}}</strong> in respect of profit.</p>
+
+<p><strong>5.7</strong> Late payment charges levied under clause 6 are payable in addition to the
+instalments set out above. Such charges do not form part of the Capital Sum, do not increase the
+Capital Sum, and are not applied towards capital or profit.</p>
 
 <div class="divider"></div>
 
