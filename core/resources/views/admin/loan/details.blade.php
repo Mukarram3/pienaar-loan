@@ -251,6 +251,48 @@
                         <span class="text-muted">No agreement uploaded</span>
                     @endif
 
+                    {{--
+                        Generated agreements.
+
+                        These are produced by LoanAgreementGenerator and stored in
+                        storage/app/loan_pdfs. They were previously only sent as email
+                        attachments, so with email disabled there was no way to obtain a
+                        copy from the panel. Each link serves the stored PDF, regenerating
+                        it from the loan record if the file is missing. Nothing is emailed.
+                    --}}
+                    @php
+                        $preAgreementFile  = storage_path('app/loan_pdfs/pre_' . $loan->loan_number . '.pdf');
+                        $commercialFile    = storage_path('app/loan_pdfs/loan_' . $loan->loan_number . '.pdf');
+                        $commercialIssued  = in_array($loan->status, [Status::LOAN_APPROVED, Status::LOAN_RUNNING, Status::LOAN_PAID]);
+                    @endphp
+
+                    <h5 class="card-title border-bottom pb-2 mt-4">@lang('Generated Agreements')</h5>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <a href="{{ route('admin.loan.agreement.generated', [$loan->id, 'pre']) }}"
+                           class="btn btn-outline--primary">
+                            <i class="las la-file-download"></i>
+                            @lang('Pre-Agreement Statement')
+                            @if (!file_exists($preAgreementFile))
+                                <small class="text--muted">(@lang('will be generated'))</small>
+                            @endif
+                        </a>
+
+                        @if ($commercialIssued)
+                            <a href="{{ route('admin.loan.agreement.generated', [$loan->id, 'commercial']) }}"
+                               class="btn btn-outline--primary">
+                                <i class="las la-file-download"></i>
+                                @lang('Commercial Loan Agreement')
+                                @if (!file_exists($commercialFile))
+                                    <small class="text--muted">(@lang('will be generated'))</small>
+                                @endif
+                            </a>
+                        @else
+                            <span class="text-muted">
+                                @lang('The commercial agreement becomes available once the loan is approved.')
+                            </span>
+                        @endif
+                    </div>
+
                     <div class="row mt-4">
                         <div class="col-md-12 d-flex flex-wrap gap-2">
                             @if ($loan->status == Status::LOAN_PENDING)

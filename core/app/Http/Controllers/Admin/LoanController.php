@@ -178,6 +178,68 @@ class LoanController extends Controller
         );
     }
 
+    /**
+     * Download a generated loan agreement.
+     *
+     * Serves the PDF written by LoanAgreementGenerator into
+     * storage/app/loan_pdfs/. These files were previously only reachable from
+     * the filesystem: generation happens when the borrower applies and when an
+     * admin approves, and the PDF was attached to an email but never exposed in
+     * the panel. With email disabled there was no way to obtain a copy.
+     *
+     * If the file is absent it is regenerated from the loan's current record
+     * rather than returning an error. Nothing is emailed.
+     *
+     * @param  string  $type  'pre' (Pre-Agreement Statement) or 'commercial'
+     */
+    public function downloadGeneratedAgreement($id, $type = 'commercial')
+    {
+        if (!in_array($type, ['pre', 'commercial'], true)) {
+            abort(404);
+        }
+
+        $loan = Loan::with(['user', 'plan'])->findOrFail($id);
+
+        if (!$loan->user || !$loan->plan) {
+            $notify[] = ['error', 'This loan has no borrower or plan attached, so an agreement cannot be produced.'];
+            return back()->withNotify($notify);
+        }
+
+        $context = $type === 'pre'
+            ? LoanAgreementGenerator::CONTEXT_APPLICATION
+            : LoanAgreementGenerator::CONTEXT_APPROVAL;
+
+        $prefix   = $type === 'pre' ? 'pre_' : 'loan_';
+        $filePath = storage_path('app/loan_pdfs/' . $prefix . $loan->loan_number . '.pdf');
+
+        // Regenerate on demand when the stored copy is missing or empty.
+        if (!is_file($filePath) || filesize($filePath) === 0) {
+            try {
+                $filePath = app(LoanAgreementGenerator::class)->generate(
+                    $loan->user,
+                    $loan,
+                    $loan->plan,
+                    $context
+                );
+            } catch (\Throwable $e) {
+                $notify[] = ['error', 'The agreement could not be produced: ' . $e->getMessage()];
+                return back()->withNotify($notify);
+            }
+        }
+
+        if (!is_file($filePath)) {
+            abort(404, 'Agreement not found.');
+        }
+
+        $downloadName = ($type === 'pre' ? 'Pre-Agreement-Statement-' : 'Commercial-Loan-Agreement-')
+            . $loan->loan_number . '.pdf';
+
+        return response()->download($filePath, $downloadName, [
+            'Content-Type'  => 'application/pdf',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
     public function viewAgreement($id)
     {
         $loan = Loan::findOrFail($id);

@@ -95,6 +95,13 @@ Route::middleware('admin')->group(function () {
         Route::get('payment-history-pdf/{id}', 'paymentHistoryPdf')->name('payment.history.pdf');
         Route::get('loan-agreement-pdf/{id}', 'loanAgreementPdf')->name('agreement.pdf');
 
+        // Download a generated agreement (pre-agreement statement or commercial
+        // agreement) from the panel. Previously these PDFs existed only on disk
+        // in storage/app/loan_pdfs and were reachable only by email attachment.
+        Route::get('generated-agreement/{id}/{type}', 'downloadGeneratedAgreement')
+            ->whereIn('type', ['pre', 'commercial'])
+            ->name('agreement.generated');
+
         Route::get('settlement-certificate/{id}', 'settlementCertificate')->name('settlement.certificate');
 
         Route::name('legacy.')->prefix('legacy')->controller('LegacyLoanController')->group(function () {
